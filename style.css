@@ -298,6 +298,7 @@ tr:hover td {
 
 /* ---- STATUS PILL AT BOTTOM OF FORM ---- */
 .status-pill {
+  display: none;
   margin-top: 10px;
   padding: 10px 12px;
   border-radius: 999px;

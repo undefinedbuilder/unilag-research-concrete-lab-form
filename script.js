@@ -37,12 +37,24 @@ function setDateToToday(inputEl) {
 function setStatusLine(message, kind = "info") {
   const el = document.getElementById("status-line");
   if (!el) return;
-  el.textContent = message || "";
+
+  // if no message, hide the pill and stop
+  if (!message) {
+    el.textContent = "";
+    el.style.display = "none";
+    el.classList.remove("status-success", "status-error", "status-info");
+    return;
+  }
+
+  // show pill with the right style
+  el.style.display = "block";
+  el.textContent = message;
   el.classList.remove("status-success", "status-error", "status-info");
   if (kind === "success") el.classList.add("status-success");
   else if (kind === "error") el.classList.add("status-error");
   else el.classList.add("status-info");
 }
+
 
 /* ------------------------------------------------------------
    DYNAMIC ROWS FOR ADMIXTURES AND REPLACEMENTS
@@ -64,7 +76,7 @@ function createAdmixtureRow(data = {}) {
 
     <label>
       <span class="label-line">Dosage (L/100kg of Cement) <span class="required-asterisk">*</span></span>
-      <input type="text" name="adm_dosage" value="${data.dosage || ""}">
+      <input type="number" name="adm_dosage" value="${data.dosage || ""}">
     </label>
 
     <button type="button" class="remove-row-btn">×</button>
@@ -91,7 +103,7 @@ function createReplacementRow(data = {}) {
 
     <label>
       <span class="label-line">Quantity (kg/m³) <span class="required-asterisk">*</span></span>
-      <input type="text" name="rep_quantity" value="${data.quantity || ""}">
+      <input type="number" name="rep_quantity" value="${data.quantity || ""}">
     </label>
 
     <button type="button" class="remove-row-btn">×</button>
@@ -130,6 +142,7 @@ function validateForm() {
     "cementType",
     "slump",
     "ageToTestDays",
+    "cubesCount",
     "notes",
     "cementContent",
     "waterContent",
@@ -247,6 +260,7 @@ function collectFormData() {
         : document.getElementById("cementType").value,
     slump: Number(document.getElementById("slump").value),
     ageToTestDays: Number(document.getElementById("ageToTestDays").value),
+    cubesCount: Number(document.getElementById("cubesCount").value),
     notes: document.getElementById("notes").value.trim(),
     cementContent: Number(document.getElementById("cementContent").value),
     waterContent: Number(document.getElementById("waterContent").value),
@@ -314,6 +328,7 @@ function loadMixIntoForm(mix) {
   document.getElementById("testDate").value = mix.testDate || "";
   document.getElementById("slump").value = mix.slump ?? "";
   document.getElementById("ageToTestDays").value = mix.ageToTestDays ?? "";
+  document.getElementById("cubesCount").value = mix.cubesCount ?? "";
   document.getElementById("notes").value = mix.notes || "";
 
   const concreteSelect = document.getElementById("concreteType");
@@ -460,6 +475,8 @@ async function generatePDF(data) {
   y += lh;
   doc.text(`Slump / Flow (mm): ${data.slump}`, leftColX, y);
   doc.text(`Age to Test (days): ${data.ageToTestDays}`, rightColX, y);
+  y += lh;
+  doc.text(`Number of Cubes: ${data.cubesCount}`, leftColX, y);
   y += lh + 4;
 
   doc.setFont("helvetica", "bold");
@@ -583,7 +600,7 @@ async function generatePDF(data) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(
-    "This document was generated electronically by the Concrete Laboratory, University of Lagos (Research Mix Tracker).",
+    "This document was generated electronically by the Concrete Laboratory, University of Lagos.",
     pageW / 2,
     pageH - 10,
     { align: "center" }
@@ -616,6 +633,7 @@ function exportCsv() {
     "CementType",
     "Slump_mm",
     "AgeToTest_days",
+    "CubesCount",
     "Cement_kgm3",
     "Water_kgm3",
     "WCRatio",
@@ -657,6 +675,7 @@ function exportCsv() {
       m.cementType || "",
       m.slump ?? "",
       m.ageToTestDays ?? "",
+      m.cubesCount ?? "",
       m.cementContent ?? "",
       m.waterContent ?? "",
       m.wcRatio ?? "",
