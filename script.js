@@ -1,10 +1,9 @@
 /* ------------------------------------------------------------
-   1. GLOBAL CONSTANTS AND SIMPLE HELPERS
+   GLOBAL CONSTANTS AND SIMPLE HELPERS
 ------------------------------------------------------------ */
-const STORAGE_KEY = "concrete-mixes";   // localStorage key for saved mixes
-let logoImageDataUrl = null;           // logo as data URL for PDF
+const STORAGE_KEY = "concrete-mixes";
+let logoImageDataUrl = null;
 
-// Load an image file as a data URL for PDF header
 function loadImageAsDataURL(path) {
     return fetch(path)
         .then(resp => {
@@ -19,7 +18,6 @@ function loadImageAsDataURL(path) {
         .catch(() => null);
 }
 
-// Make a safe filename from text
 function sanitizeFilename(name) {
     return String(name)
         .replace(/[\\/:*?"<>|]+/g, " ")
@@ -27,12 +25,16 @@ function sanitizeFilename(name) {
         .trim();
 }
 
+function setDateToToday(inputEl) {
+    const tzOffset = new Date().getTimezoneOffset() * 60000;
+    const todayLocal = new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
+    inputEl.value = todayLocal;
+}
+
 
 /* ------------------------------------------------------------
-   2. CREATE DYNAMIC ROWS FOR ADMIXTURES & REPLACEMENTS
+   CREATE DYNAMIC ROWS FOR ADMIXTURES AND REPLACEMENTS
 ------------------------------------------------------------ */
-
-// Create a single admixture row
 function createAdmixtureRow(data = {}) {
     const row = document.createElement("div");
     row.className = "dynamic-row";
@@ -60,7 +62,6 @@ function createAdmixtureRow(data = {}) {
     return row;
 }
 
-// Create a single SCM replacement row
 function createReplacementRow(data = {}) {
     const row = document.createElement("div");
     row.className = "dynamic-row";
@@ -90,7 +91,7 @@ function createReplacementRow(data = {}) {
 
 
 /* ------------------------------------------------------------
-   3. WATER–CEMENT RATIO CALCULATION
+   WATER–CEMENT RATIO CALCULATION
 ------------------------------------------------------------ */
 function updateWCRatio() {
     const cement = parseFloat(document.getElementById("cementContent").value);
@@ -108,7 +109,7 @@ function updateWCRatio() {
 
 
 /* ------------------------------------------------------------
-   4. VALIDATION – CHECK REQUIRED FIELDS
+   VALIDATION
 ------------------------------------------------------------ */
 function validateForm() {
     const fields = [
@@ -187,7 +188,7 @@ function validateForm() {
 
 
 /* ------------------------------------------------------------
-   5. CONVERT FORM DATA INTO A CLEAN OBJECT
+   COLLECT FORM DATA
 ------------------------------------------------------------ */
 function collectFormData() {
     const admixtures = [];
@@ -252,7 +253,7 @@ function collectFormData() {
 
 
 /* ------------------------------------------------------------
-   6. LOCAL STORAGE HELPERS
+   LOCAL STORAGE
 ------------------------------------------------------------ */
 function getLocalMixes() {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -270,7 +271,7 @@ function saveLocal(mix) {
 
 
 /* ------------------------------------------------------------
-   7. RENDER SAVED MIX TABLE AND ROW CLICK HANDLER
+   RENDER SAVED MIXES AND LOAD BACK INTO FORM
 ------------------------------------------------------------ */
 function renderSavedMixes() {
     const mixes = getLocalMixes();
@@ -311,7 +312,6 @@ function loadMixIntoForm(mix) {
     document.getElementById("ageToTestDays").value = mix.ageToTestDays ?? "";
     document.getElementById("notes").value = mix.notes || "";
 
-    // Concrete type handling
     const concreteSelect = document.getElementById("concreteType");
     const concreteOtherWrapper = document.getElementById("concreteTypeOtherWrapper");
     const concreteOther = document.getElementById("concreteTypeOther");
@@ -325,7 +325,6 @@ function loadMixIntoForm(mix) {
         concreteOther.value = mix.concreteType || "";
     }
 
-    // Cement type handling
     const cementSelect = document.getElementById("cementType");
     const cementOtherWrapper = document.getElementById("cementTypeOtherWrapper");
     const cementOther = document.getElementById("cementTypeOther");
@@ -345,7 +344,6 @@ function loadMixIntoForm(mix) {
     document.getElementById("mediumAgg").value = mix.mediumAgg ?? "";
     document.getElementById("coarseAgg").value = mix.coarseAgg ?? "";
 
-    // Rebuild admixture rows
     const admContainer = document.getElementById("admixtures-container");
     admContainer.innerHTML = "";
     if (mix.admixtures && mix.admixtures.length) {
@@ -354,7 +352,6 @@ function loadMixIntoForm(mix) {
         admContainer.appendChild(createAdmixtureRow());
     }
 
-    // Rebuild replacement rows
     const repContainer = document.getElementById("replacements-container");
     repContainer.innerHTML = "";
     if (mix.replacements && mix.replacements.length) {
@@ -368,7 +365,7 @@ function loadMixIntoForm(mix) {
 
 
 /* ------------------------------------------------------------
-   8. PDF GENERATION IN LAB FORMAT (WITH ALL FIELDS)
+   PDF GENERATION IN LAB FORMAT
 ------------------------------------------------------------ */
 async function generatePDF(data) {
     const { jsPDF } = window.jspdf;
@@ -426,7 +423,7 @@ async function generatePDF(data) {
         y += lh;
     }
     doc.text(`Date/Time Generated: ${new Date().toLocaleString()}`, margin, y); y += lh;
-    doc.text(`Casting Date: ${data.testDate}`, margin, y); y += lh + 4;
+    doc.text(`Testing Date: ${data.testDate}`, margin, y); y += lh + 4;
 
     doc.setFont("helvetica", "bold");
     doc.text("Student & Project Details", leftColX, y); y += lh;
@@ -531,7 +528,7 @@ async function generatePDF(data) {
 
 
 /* ------------------------------------------------------------
-   9. CSV EXPORT AND CLEAR ALL
+   CSV EXPORT AND CLEAR ALL
 ------------------------------------------------------------ */
 function exportCsv() {
     const mixes = getLocalMixes();
@@ -545,7 +542,7 @@ function exportCsv() {
         "Institution",
         "Supervisor",
         "ProjectTitle",
-        "CastingDate",
+        "TestingDate",
         "ConcreteType",
         "CementType",
         "Slump_mm",
@@ -616,7 +613,7 @@ function clearAllMixes() {
 
 
 /* ------------------------------------------------------------
-   10. APPLICATION NUMBER MODAL CONTROL
+   APPLICATION NUMBER MODAL
 ------------------------------------------------------------ */
 function openModal(appNo) {
     const modal = document.getElementById("appModal");
@@ -634,7 +631,7 @@ function closeModal() {
 
 
 /* ------------------------------------------------------------
-   11. HANDLE FORM SUBMISSION
+   FORM SUBMISSION
 ------------------------------------------------------------ */
 async function submitForm(event) {
     event.preventDefault();
@@ -681,21 +678,21 @@ async function submitForm(event) {
 
 
 /* ------------------------------------------------------------
-   12. INITIAL SETUP WHEN PAGE LOADS
+   PAGE INITIALISATION
 ------------------------------------------------------------ */
 document.addEventListener("DOMContentLoaded", () => {
-    // Preload logo as data URL for PDF
+    const testDateEl = document.getElementById("testDate");
+    setDateToToday(testDateEl);
+
     loadImageAsDataURL("unilag-logo.png").then(d => {
         logoImageDataUrl = d;
     });
 
-    // Insert initial dynamic rows
     document.getElementById("admixtures-container")
         .appendChild(createAdmixtureRow());
     document.getElementById("replacements-container")
         .appendChild(createReplacementRow());
 
-    // Show "Specify..." when "Other" is selected
     document.getElementById("concreteType").onchange = function () {
         const wrapper = document.getElementById("concreteTypeOtherWrapper");
         if (this.value === "Other") {
@@ -716,11 +713,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Live W/C ratio update
     document.getElementById("cementContent").oninput = updateWCRatio;
     document.getElementById("waterContent").oninput = updateWCRatio;
 
-    // Form submit and buttons
     document.getElementById("mix-form").onsubmit = submitForm;
 
     document.getElementById("add-admixture-btn").onclick = () =>
@@ -733,6 +728,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("reset-form-btn").onclick = () => {
         document.getElementById("mix-form").reset();
+        setDateToToday(testDateEl);
+
         document.getElementById("admixtures-container").innerHTML = "";
         document.getElementById("replacements-container").innerHTML = "";
         document.getElementById("admixtures-container")
@@ -744,11 +741,9 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("status-line").textContent = "";
     };
 
-    // Table actions
     document.getElementById("export-csv-btn").onclick = exportCsv;
     document.getElementById("clear-all-btn").onclick = clearAllMixes;
 
-    // Table row click to load mix
     document.getElementById("mixes-table-body").onclick = (e) => {
         const row = e.target.closest("tr");
         if (!row || row.classList.contains("no-data")) return;
@@ -763,7 +758,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Modal close interactions
     document.getElementById("modalClose").onclick = closeModal;
     document.getElementById("appModal").addEventListener("click", e => {
         if (e.target === e.currentTarget) closeModal();
@@ -772,9 +766,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Escape") closeModal();
     });
 
-    // Render saved table on load
     renderSavedMixes();
 
-    // Footer year
     document.getElementById("year").textContent = new Date().getFullYear();
 });
