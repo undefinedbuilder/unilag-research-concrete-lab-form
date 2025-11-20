@@ -1,299 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNILAG Concrete Research Mix Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UNILAG Concrete Research Mix Tracker</title>
 
-    <!-- Link CSS -->
-    <link rel="stylesheet" href="style.css">
-
-    <!-- Load jsPDF for PDF generation -->
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
-
-    <!-- Main frontend logic -->
-    <script src="script.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <script src="script.js" defer></script>
 </head>
 
 <body>
-    <main class="container">
+  <main class="container">
+    <!-- HEADER -->
+    <header class="header">
+      <img src="unilag-logo.png" class="logo" alt="UNILAG Logo" />
+      <h1>The Department of Civil &amp; Environmental Engineering</h1>
+      <h2>CONCRETE LABORATORY, UNIVERSITY OF LAGOS</h2>
+      <p class="notice">
+        <strong>NOTE:</strong> For research purposes only. Enter 0 for any component that is not used.
+      </p>
+    </header>
 
-        <!-- HEADER SECTION -->
-        <header class="header">
-            <img src="unilag-logo.png" class="logo" alt="UNILAG Logo">
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+      <!-- FORM -->
+      <section class="card">
+        <h3>Student Research Mix Form</h3>
 
-            <h1>The Department of Civil & Environmental Engineering</h1>
-            <h2>CONCRETE LABORATORY, UNIVERSITY OF LAGOS</h2>
+        <div id="form-error-summary" class="error-summary"></div>
 
-            <p class="notice">
-                <strong>NOTE:</strong> For research purposes only. Enter 0 for unused components.
-            </p>
-        </header>
+        <form id="mix-form">
+          <!-- STUDENT AND PROJECT DETAILS -->
+          <h4 class="section-title">Student &amp; Project Details</h4>
 
+          <div class="grid two">
+            <label>
+              <span class="label-line">
+                Student Name <span class="required-asterisk">*</span>
+              </span>
+              <input type="text" id="studentName" />
+            </label>
 
-        <!-- MAIN GRID: FORM (LEFT) + SAVED MIXES (RIGHT) -->
-        <div class="main-grid">
+            <label>
+              <span class="label-line">
+                Matric / Reg. No. <span class="required-asterisk">*</span>
+              </span>
+              <input type="text" id="matricNo" />
+            </label>
 
-            <!-- LEFT: FORM -->
-            <section class="card">
-                <h3>Student Research Mix Form</h3>
+            <label>
+              <span class="label-line">
+                Institution <span class="required-asterisk">*</span>
+              </span>
+              <input type="text" id="institution" placeholder="e.g., University of Lagos" />
+            </label>
 
-                <!-- Status line -->
-                <p id="status-line" class="subtle"></p>
+            <label>
+              <span class="label-line">
+                Supervisor <span class="required-asterisk">*</span>
+              </span>
+              <input type="text" id="supervisor" />
+            </label>
+          </div>
 
-                <!-- Error summary -->
-                <div id="form-error-summary" class="error-summary"></div>
+          <label class="full">
+            <span class="label-line">
+              Project Title <span class="required-asterisk">*</span>
+            </span>
+            <input type="text" id="projectTitle" />
+          </label>
 
-                <form id="mix-form">
+          <!-- MIX DESIGN OVERVIEW -->
+          <h4 class="section-title">Mix Design Overview</h4>
 
-                    <!-- STUDENT & PROJECT DETAILS -->
-                    <h4 class="section-title">Student & Project Details</h4>
+          <div class="grid two">
+            <label>
+              <span class="label-line">
+                Testing Date <span class="required-asterisk">*</span>
+              </span>
+              <input type="date" id="testDate" />
+            </label>
 
-                    <div class="grid two">
-                        <label>
-                            <span class="label-line">
-                                Student Name <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="text" id="studentName">
-                        </label>
+            <label>
+              <span class="label-line">
+                Concrete Type <span class="required-asterisk">*</span>
+              </span>
+              <select id="concreteType">
+                <option value="">-- Select --</option>
+                <option>Normal strength</option>
+                <option>High strength</option>
+                <option>Self-compacting</option>
+                <option>Fiber-reinforced</option>
+                <option>Lightweight</option>
+                <option>Other</option>
+              </select>
+            </label>
 
-                        <label>
-                            <span class="label-line">
-                                Matric / Reg. No. <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="text" id="matricNo">
-                        </label>
+            <label id="concreteTypeOtherWrapper" style="display:none;">
+              <span class="label-line">
+                Specify Concrete Type <span class="required-asterisk">*</span>
+              </span>
+              <input type="text" id="concreteTypeOther" />
+            </label>
 
-                        <label>
-                            <span class="label-line">
-                                Institution <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="text" id="institution" placeholder="e.g., University of Lagos">
-                        </label>
+            <label>
+              <span class="label-line">
+                Cement Type <span class="required-asterisk">*</span>
+              </span>
+              <select id="cementType">
+                <option value="">-- Select --</option>
+                <option>OPC</option>
+                <option>Rapid Hardening</option>
+                <option>Portland Limestone</option>
+                <option>Blended (CEM II)</option>
+                <option>Other</option>
+              </select>
+            </label>
 
-                        <label>
-                            <span class="label-line">
-                                Supervisor <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="text" id="supervisor">
-                        </label>
-                    </div>
+            <label id="cementTypeOtherWrapper" style="display:none;">
+              <span class="label-line">
+                Specify Cement Type <span class="required-asterisk">*</span>
+              </span>
+              <input type="text" id="cementTypeOther" />
+            </label>
 
-                    <label class="full">
-                        <span class="label-line">
-                            Project Title <span class="required-asterisk">*</span>
-                        </span>
-                        <input type="text" id="projectTitle">
-                    </label>
+            <label>
+              <span class="label-line">
+                Slump / Flow (mm) <span class="required-asterisk">*</span>
+              </span>
+              <input type="number" min="0" id="slump" />
+            </label>
 
+            <label>
+              <span class="label-line">
+                Age to Test (days) <span class="required-asterisk">*</span>
+              </span>
+              <input type="number" min="1" id="ageToTestDays" />
+            </label>
+          </div>
 
-                    <!-- MIX DESIGN OVERVIEW -->
-                    <h4 class="section-title">Mix Design Overview</h4>
+          <label class="full">
+            <span class="label-line">
+              General Notes <span class="required-asterisk">*</span>
+            </span>
+            <textarea id="notes" rows="3"></textarea>
+          </label>
 
-                    <div class="grid two">
-                        <label>
-                            <span class="label-line">
-                                Testing Date <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="date" id="testDate">
-                        </label>
+          <!-- MATERIAL QUANTITIES -->
+          <h4 class="section-title">Material Quantities (kg/m³)</h4>
 
-                        <label>
-                            <span class="label-line">
-                                Concrete Type <span class="required-asterisk">*</span>
-                            </span>
-                            <select id="concreteType">
-                                <option value="">-- Select --</option>
-                                <option>Normal strength</option>
-                                <option>High strength</option>
-                                <option>Self-compacting</option>
-                                <option>Fiber-reinforced</option>
-                                <option>Lightweight</option>
-                                <option>Other</option>
-                            </select>
-                        </label>
+          <div class="grid two">
+            <label>
+              <span class="label-line">
+                Cement (kg/m³) <span class="required-asterisk">*</span>
+              </span>
+              <input type="number" min="0" step="0.1" id="cementContent" />
+            </label>
 
-                        <label id="concreteTypeOtherWrapper" style="display:none;">
-                            <span class="label-line">
-                                Specify Concrete Type <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="text" id="concreteTypeOther">
-                        </label>
+            <label>
+              <span class="label-line">
+                Water (kg/m³) <span class="required-asterisk">*</span>
+              </span>
+              <input type="number" min="0" step="0.1" id="waterContent" />
+            </label>
 
-                        <label>
-                            <span class="label-line">
-                                Cement Type <span class="required-asterisk">*</span>
-                            </span>
-                            <select id="cementType">
-                                <option value="">-- Select --</option>
-                                <option>OPC</option>
-                                <option>Rapid Hardening</option>
-                                <option>Portland Limestone</option>
-                                <option>Blended (CEM II)</option>
-                                <option>Other</option>
-                            </select>
-                        </label>
+            <label>
+              <span class="label-line">
+                Fine Aggregate (kg/m³) <span class="required-asterisk">*</span>
+              </span>
+              <input type="number" min="0" step="0.1" id="fineAgg" />
+            </label>
 
-                        <label id="cementTypeOtherWrapper" style="display:none;">
-                            <span class="label-line">
-                                Specify Cement Type <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="text" id="cementTypeOther">
-                        </label>
+            <label>
+              <span class="label-line">
+                Medium Aggregate (kg/m³) <span class="required-asterisk">*</span>
+              </span>
+              <input type="number" min="0" step="0.1" id="mediumAgg" />
+            </label>
 
-                        <label>
-                            <span class="label-line">
-                                Slump / Flow (mm) <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="number" min="0" id="slump">
-                        </label>
+            <label>
+              <span class="label-line">
+                Coarse Aggregate (kg/m³) <span class="required-asterisk">*</span>
+              </span>
+              <input type="number" min="0" step="0.1" id="coarseAgg" />
+            </label>
+          </div>
 
-                        <label>
-                            <span class="label-line">
-                                Age to Test (days) <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="number" min="1" id="ageToTestDays">
-                        </label>
-                    </div>
+          <div id="wcratio-box" class="wc-box">
+            <strong>Water–Cement Ratio:</strong>
+            <span id="wcRatioValue">0.00</span>
+          </div>
 
-                    <label class="full">
-                        <span class="label-line">
-                            General Notes <span class="required-asterisk">*</span>
-                        </span>
-                        <textarea id="notes" rows="3"></textarea>
-                    </label>
+          <!-- CHEMICAL ADMIXTURES -->
+          <h4 class="section-title">Chemical Admixtures</h4>
+          <p class="subtle">If none, you may enter one row and type “Nil”.</p>
 
+          <div id="admixtures-container" class="dynamic-group"></div>
 
-                    <!-- MATERIAL QUANTITIES -->
-                    <h4 class="section-title">Material Quantities (kg/m³)</h4>
+          <button type="button" id="add-admixture-btn" class="btn-primary small">
+            + Add Admixture
+          </button>
 
-                    <div class="grid two">
-                        <label>
-                            <span class="label-line">
-                                Cement (kg/m³) <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="number" min="0" step="0.1" id="cementContent">
-                        </label>
+          <!-- PARTIAL CEMENT REPLACEMENTS -->
+          <h4 class="section-title">Partial Cement Replacements (SCMs)</h4>
+          <p class="subtle">If none, you may enter one row and type “Nil”.</p>
 
-                        <label>
-                            <span class="label-line">
-                                Water (kg/m³) <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="number" min="0" step="0.1" id="waterContent">
-                        </label>
+          <div id="replacements-container" class="dynamic-group"></div>
 
-                        <label>
-                            <span class="label-line">
-                                Fine Aggregate (kg/m³) <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="number" min="0" step="0.1" id="fineAgg">
-                        </label>
+          <button type="button" id="add-replacement-btn" class="btn-primary small">
+            + Add Replacement
+          </button>
 
-                        <label>
-                            <span class="label-line">
-                                Medium Aggregate (kg/m³) <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="number" min="0" step="0.1" id="mediumAgg">
-                        </label>
+          <!-- ACTIONS AND STATUS -->
+          <div class="actions two-cols">
+            <button type="submit" id="save-mix-btn" class="btn-submit">
+              Submit, Save &amp; Generate PDF
+            </button>
+            <button type="button" id="reset-form-btn" class="btn-secondary">
+              Clear Form
+            </button>
+          </div>
 
-                        <label>
-                            <span class="label-line">
-                                Coarse Aggregate (kg/m³) <span class="required-asterisk">*</span>
-                            </span>
-                            <input type="number" min="0" step="0.1" id="coarseAgg">
-                        </label>
-                    </div>
+          <p id="status-line" class="status-pill"></p>
+        </form>
+      </section>
 
-                    <!-- LIVE WATER-CEMENT RATIO DISPLAY -->
-                    <div id="wcratio-box" class="wc-box">
-                        <strong>Water–Cement Ratio:</strong>
-                        <span id="wcRatioValue">0.00</span>
-                    </div>
+      <!-- SAVED MIXES TABLE -->
+      <section class="card">
+        <h3>Saved Mixes (Local Only)</h3>
 
-
-                    <!-- ADMIXTURES -->
-                    <h4 class="section-title">Chemical Admixtures</h4>
-                    <p class="subtle">If none, type "nil" for the first row.</p>
-
-                    <div id="admixtures-container" class="dynamic-group"></div>
-
-                    <button type="button" id="add-admixture-btn" class="btn-primary small">+ Add Admixture</button>
-
-
-                    <!-- SCM / REPLACEMENTS -->
-                    <h4 class="section-title">Partial Cement Replacement</h4>
-                    <p class="subtle">If none, type "nil" for the first row.</p>
-
-                    <div id="replacements-container" class="dynamic-group"></div>
-
-                    <button type="button" id="add-replacement-btn" class="btn-primary small">+ Add Replacement</button>
-
-
-                    <!-- ACTION BUTTONS -->
-                    <div class="actions two-cols">
-                        <button type="submit" id="save-mix-btn" class="btn-submit">Save & Generate PDF</button>
-                        <button type="button" id="reset-form-btn" class="btn-secondary">Clear Form</button>
-                    </div>
-
-                </form>
-            </section>
-
-
-
-            <!-- RIGHT: SAVED MIXES -->
-            <section class="card">
-                <h3>Saved Mixes (Local Only)</h3>
-
-                <div class="table-actions">
-                    <button id="export-csv-btn" class="btn-primary small">Export CSV</button>
-                    <button id="clear-all-btn" class="btn-primary small outline">Clear All</button>
-                </div>
-
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>App No</th>
-                                <th>Student</th>
-                                <th>Type</th>
-                                <th>Slump</th>
-                                <th>W/C</th>
-                                <th>Updated</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mixes-table-body">
-                            <tr><td colspan="6" class="no-data">No mixes saved yet.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <p class="subtle small-note">Click a row to load that mix back into the form.</p>
-            </section>
-
+        <div class="table-actions">
+          <button id="export-csv-btn" class="btn-primary small">Export CSV</button>
+          <button id="clear-all-btn" class="btn-primary small outline">Clear All</button>
         </div>
 
-
-        <!-- APPLICATION NUMBER MODAL -->
-        <div id="appModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <div class="modal-card research">
-                <div class="modal-header">
-                    <h4 id="modalTitle">Application Number</h4>
-                    <button id="modalClose" type="button" class="modal-x" aria-label="Close dialog">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="modal-number" id="modalNumber">UNILAG-CR-A000001</div>
-                    <div class="modal-note">
-                        Please keep this number safe and quote it in all discussions with the Concrete Laboratory.
-                    </div>
-                </div>
-            </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>App No</th>
+                <th>Student</th>
+                <th>Type</th>
+                <th>Slump</th>
+                <th>W/C</th>
+                <th>Saved</th>
+              </tr>
+            </thead>
+            <tbody id="mixes-table-body">
+              <tr><td colspan="6" class="no-data">No mixes saved yet.</td></tr>
+            </tbody>
+          </table>
         </div>
+        <p class="subtle small-note">Click a row to load that mix back into the form.</p>
+      </section>
+    </div>
 
+    <!-- APPLICATION NUMBER MODAL -->
+    <div id="appModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-card research">
+        <div class="modal-header">
+          <h4 id="modalTitle">Application Number</h4>
+          <button id="modalClose" type="button" class="modal-x" aria-label="Close dialog">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-number" id="modalNumber">UNILAG-CR-A000001</div>
+          <div class="modal-note">
+            Please keep this number safe and quote it in all discussions with the Concrete Laboratory.
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <!-- FOOTER -->
-        <footer class="footer">
-            © <span id="year"></span> Designed by Jesuto Ilugbo for UNILAG Concrete Laboratory
-        </footer>
-
-    </main>
+    <!-- FOOTER -->
+    <footer class="footer">
+      © <span id="year"></span> Designed by Jesuto Ilugbo for UNILAG Concrete Laboratory
+    </footer>
+  </main>
 </body>
 </html>
