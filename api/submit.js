@@ -3,6 +3,7 @@ import { google } from "googleapis";
 /* ---------------------------------------------------------------
    FUNCTION: Generate next application number in sequence
    Format: UNILAG-CR-A000001 → UNILAG-CR-A000002 ...
+   Also rolls digits and letters; after Z it resets to A
 ---------------------------------------------------------------- */
 function nextRecordId(lastId) {
     if (!lastId) return "UNILAG-CR-A000001";
@@ -17,7 +18,9 @@ function nextRecordId(lastId) {
         number = 1;
         letterCode++;
     }
-    if (letterCode > 90) letterCode = 65; // After Z → A
+    if (letterCode > 90) {
+        letterCode = 65;
+    }
 
     return `UNILAG-CR-${String.fromCharCode(letterCode)}${String(number).padStart(6, "0")}`;
 }
@@ -27,15 +30,12 @@ function nextRecordId(lastId) {
    MAIN HANDLER
 ---------------------------------------------------------------- */
 export default async function handler(req, res) {
-
-    // Only allow POST requests
     if (req.method !== "POST") {
         return res.status(405).json({ success: false, message: "Method not allowed" });
     }
 
     const body = req.body;
 
-    // Required fields list
     const required = [
         "studentName", "matricNo", "institution", "supervisor", "projectTitle",
         "testDate", "concreteType", "cementType", "slump", "ageToTestDays",
@@ -43,7 +43,6 @@ export default async function handler(req, res) {
         "fineAgg", "mediumAgg", "coarseAgg"
     ];
 
-    // Check for missing fields
     for (const key of required) {
         if (body[key] === undefined || body[key] === null || String(body[key]).trim() === "") {
             return res.status(400).json({
@@ -53,7 +52,6 @@ export default async function handler(req, res) {
         }
     }
 
-    // Extract fields
     const {
         studentName, matricNo, institution, supervisor, projectTitle,
         testDate, concreteType, cementType, slump, ageToTestDays,
@@ -62,19 +60,17 @@ export default async function handler(req, res) {
         admixtures = [], replacements = []
     } = body;
 
-    // Convert admixtures into one string
     const admixtureString = admixtures
-        .map((a, i) => `${i + 1}. ${a.name || ''} | ${a.type || ''} | ${a.dosage || ''}`)
+        .map((a, i) => `${i + 1}. ${a.name || ""} | ${a.type || ""} | ${a.dosage || ""}`)
         .join(" || ");
 
-    // Convert SCM replacements into one string
     const replacementString = replacements
-        .map((r, i) => `${i + 1}. ${r.name || ''} | ${r.percent || ''}% | ${r.quantity || ''}`)
+        .map((r, i) => `${i + 1}. ${r.name || ""} | ${r.percent || ""}% | ${r.quantity || ""}`)
         .join(" || ");
 
 
     /* -----------------------------------------------------------
-       Setup Google Sheets Authentication
+       GOOGLE SHEETS AUTHENTICATION
     ------------------------------------------------------------ */
     const sheetId = process.env.SHEET_ID;
     const credentials = process.env.GOOGLE_SERVICE_CREDENTIALS;
@@ -95,31 +91,38 @@ export default async function handler(req, res) {
 
 
     /* -----------------------------------------------------------
-       Get last application number from Column A of Research Sheet
+       FETCH LAST APPLICATION NUMBER FROM RESEARCH SHEET
     ------------------------------------------------------------ */
-    const existing = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range: "Research Sheet!A:A",
-    });
-
-    const rows = existing.data.values || [];
     let lastId = null;
 
-    for (let i = rows.length - 1; i >= 0; i--) {
-        if (rows[i][0] && rows[i][0].trim()) {
-            lastId = rows[i][0].trim();
-            break;
+    try {
+        const existing = await sheets.spreadsheets.values.get({
+            spreadsheetId: sheetId,
+            range: "Research Sheet!A:A",
+        });
+
+        const rows = existing.data.values || [];
+
+        for (let i = rows.length - 1; i >= 0; i--) {
+            if (rows[i][0] && rows[i][0].trim()) {
+                lastId = rows[i][0].trim();
+                break;
+            }
         }
+    } catch (err) {
+        console.error("Error reading last recordId:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to read existing records",
+        });
     }
 
-    // Generate new application number
     const recordId = nextRecordId(lastId);
     const timestamp = new Date().toISOString();
 
 
     /* -----------------------------------------------------------
-       NEW COLUMN ORDER (Option C)
-       This must match your Google Sheet:
+       COLUMN ORDER IN GOOGLE SHEET (RESEARCH SHEET)
        A: App No
        B: Timestamp
        C: Student
@@ -128,7 +131,7 @@ export default async function handler(req, res) {
        F: Supervisor
        G: Project Title
        H: Age to Test
-       I: Test Date
+       I: Testing Date
        J: Concrete Type
        K: Cement Type
        L: Slump
@@ -142,7 +145,6 @@ export default async function handler(req, res) {
        T: Replacements
        U: Notes
     ------------------------------------------------------------ */
-
     const row = [[
         recordId,
         timestamp,
@@ -169,18 +171,26 @@ export default async function handler(req, res) {
 
 
     /* -----------------------------------------------------------
-       Append row into Google Sheet
+       APPEND ROW TO GOOGLE SHEET
     ------------------------------------------------------------ */
-    await sheets.spreadsheets.values.append({
-        spreadsheetId: sheetId,
-        range: "Research Sheet!A:U",
-        valueInputOption: "USER_ENTERED",
-        requestBody: { values: row },
-    });
+    try {
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: sheetId,
+            range: "Research Sheet!A:U",
+            valueInputOption: "USER_ENTERED",
+            requestBody: { values: row },
+        });
+    } catch (err) {
+        console.error("Error appending row:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to save record",
+        });
+    }
 
 
     /* -----------------------------------------------------------
-       Return success + record ID
+       RETURN SUCCESS RESPONSE
     ------------------------------------------------------------ */
     return res.status(200).json({
         success: true,
