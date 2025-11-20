@@ -49,6 +49,7 @@ export default async function handler(req, res) {
     "cementType",
     "slump",
     "ageToTestDays",
+    "cubesCount",
     "notes",
     "cementContent",
     "waterContent",
@@ -82,6 +83,7 @@ export default async function handler(req, res) {
     cementType,
     slump,
     ageToTestDays,
+    cubesCount,
     notes,
     cementContent,
     waterContent,
@@ -166,6 +168,7 @@ export default async function handler(req, res) {
       supervisor,
       projectTitle,
       ageToTestDays,
+      cubesCount,
       testDate,
       concreteType,
       cementType,
@@ -188,7 +191,7 @@ export default async function handler(req, res) {
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: "Research Sheet!A:U",
+      range: "Research Sheet!A:V",
       valueInputOption: "USER_ENTERED",
       requestBody: { values: row }
     });
