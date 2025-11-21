@@ -453,7 +453,7 @@ function loadMixIntoForm(mix) {
   document.getElementById("institution").value = mix.institution || "";
   document.getElementById("supervisor").value = mix.supervisor || "";
   document.getElementById("projectTitle").value = mix.projectTitle || "";
-  document.getElementById("testDate").value = mix.testDate || "";
+  document.getElementById("testDate").value = mix.crushDate || "";
   document.getElementById("slump").value = mix.slump ?? "";
   document.getElementById("ageDays").value = mix.ageDays ?? "";
   document.getElementById("cubesCount").value = mix.cubesCount ?? "";
@@ -796,7 +796,7 @@ async function generatePDF(data) {
 
   const student = sanitizeFilename(data.studentName || "Student");
   const date = sanitizeFilename(
-    data.testDate || new Date().toISOString().slice(0, 10)
+    data.crushDate || new Date().toISOString().slice(0, 10)
   );
   doc.save(`${student}_${date}.pdf`);
 }
@@ -858,7 +858,7 @@ function exportCsv() {
     const inst = m.institution || "";
     const sup = m.supervisor || "";
     const title = m.projectTitle || "";
-    const testDate = m.testDate || "";
+    const crushDate = m.crushDate || "";
     const concType = m.concreteType || "";
     const cemType = m.cementType || "";
     const slump = m.slump ?? "";
