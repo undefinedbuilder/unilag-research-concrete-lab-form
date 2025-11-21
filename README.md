@@ -1,99 +1,128 @@
-# UNILAG Concrete Research Mix Tracker
-
-This application allows Civil Engineering students to enter their concrete mix details, save them locally, submit to Google Sheets, and automatically download a structured PDF summary.
+# UNILAG Concrete Laboratory – Student Research Mix Intake & PDF Report System
 
 ---
 
-## 🚀 What the System Does
+## What the System Does (End-to-End)
 
-1. **User fills the form** in the browser.
-2. **Frontend validates** that all required fields are filled.
-3. **Admixtures and SCMs** can be added as dynamic rows.
-4. When submitted:
-   - Data is **saved to Google Sheets** through the serverless API.
-   - A **unique Application Number** is generated.
-   - A **PDF report** is created automatically.
-   - The mix is **saved locally** in the browser for quick reuse.
-5. All saved mixes appear in a table, where:
-   - You can **reload** any mix into the form.
-   - You can **export all mixes** to CSV.
-   - You can **clear** all local mixes.
+1. **Student fills the Research Mix Form** (`index.html`) with all required research details: personal info, project info, mix design, quantities, admixtures, SCMs, slump, age, notes, etc.
 
----
+2. **Styling and Layout** (`style.css`) ensures a modern, responsive and accessible interface consistent with academic laboratory standards.
 
-## 🗂️ Project Files
+3. **Client-Side Logic** (`script.js`) manages:
+   - Input validation for all required fields (numeric fields may be `0`).
+   - Dynamic rows for *Chemical Admixtures* and *Partial Cement Replacements (SCMs)*.
+   - Automatic calculation of the **Water–Cement Ratio**.
+   - Local saving of submitted mixes in **browser Local Storage**.
+   - Table view of all locally saved mixes.
+   - Ability to reload past mixes into the form.
+   - CSV export of all saved mixes.
+   - Clean error summaries and status indicators.
+   - Sending the full payload to the server endpoint (`/api/submit`).
+   - Receiving the server-generated **Application Number**.
+   - Automatic generation of a structured **PDF report** using jsPDF.
+   - Display of a modal showing the assigned **Application Number**.
 
-| File | Purpose |
-|------|---------|
-| `index.html` | Form layout + saved mixes table |
-| `style.css` | UI styling, responsiveness, error styles |
-| `script.js` | Validation, dynamic rows, PDF creation, localStorage |
-| `/api/submit.js` | Saves submitted data to Google Sheets |
-| `package.json` | Google Sheets API dependency |
+4. **Serverless API Endpoint** (`/api/submit` in `submit.js`):
+   - Accepts **POST** only.
+   - Validates presence of all mandatory fields.
+   - Reads the **last used Application Number** from Column A of the Google Sheet.
+   - Generates the next ID in the format:
+     ```
+     UNILAG-CR-A000001 → UNILAG-CR-A000002 → … → UNILAG-CR-A999999
+     → UNILAG-CR-B000001 → … → UNILAG-CR-Z999999 → rolls back to A000001
+     ```
+   - Appends the full record into `Research Sheet!A:V`, including timestamp and derived water–cement ratio.
+   - Returns `{ success: true, recordId }` back to the browser.
 
----
-
-## 🔧 Requirements
-
-You must set the following environment variables:
-
-SHEET_ID=<your Google Sheet ID>
-GOOGLE_SERVICE_CREDENTIALS=<full JSON of service account>
-
-The Google Sheet must have a tab named **Sheet1**.
+5. **Dependencies** (`package.json`) include:
+   - `googleapis` for interacting with Google Sheets.
 
 ---
 
-## 📄 Google Sheet Format
+## Environment & Deployment
 
-The API writes rows in the range **A:T** in the following order:
+### Required Environment Variables
+Ensure these are set in the deployment platform (e.g., Vercel):
+
+- `GOOGLE_SERVICE_CREDENTIALS`  
+  The complete Google Service Account JSON as a single string.
+
+- `SHEET_ID`  
+  The Google Sheet ID from the spreadsheet URL.
+
+If either is missing, the API returns:
+Server not configured (missing credentials)
+
+---
+
+## Google Sheet Setup
+
+Create a Google Sheet with a tab named:
+
+### **Research Sheet**
+
+Ensure columns A–V follow this order (matching the appended row):
 
 1. Application Number  
 2. Timestamp  
 3. Student Name  
-4. Matric No  
+4. Matric / Reg. No.  
 5. Institution  
 6. Supervisor  
 7. Project Title  
 8. Age to Test (days)  
-9. Casting Date  
-10. Concrete Type  
-11. Cement Type  
-12. Slump (mm)  
-13. Cement (kg/m³)  
-14. Water (kg/m³)  
-15. Fine Agg  
-16. Medium Agg  
-17. Coarse Agg  
-18. Admixtures (compiled string)  
-19. Replacements (compiled string)  
-20. Notes  
+9. Cubes Count  
+10. Testing Date  
+11. Concrete Type  
+12. Cement Type  
+13. Slump (mm)  
+14. Cement Content (kg/m³)  
+15. Water Content (kg/m³)  
+16. Water–Cement Ratio  
+17. Fine Aggregate (kg/m³)  
+18. Medium Aggregate (kg/m³)  
+19. Coarse Aggregate (kg/m³)  
+20. Admixtures (flattened string)  
+21. Replacements (flattened string)  
+22. Notes  
+
+> The API writes to `Research Sheet!A:V`.  
+> Rename or adjust only if you modify the code.
 
 ---
 
-## 📦 Local Saving
+## Notes on Validation, Reliability & Safety
 
-All mixes are also stored in the browser via **localStorage**, so refreshing does not lose data.
+- All required fields must be completed before submission.  
+- “Other” selections for Concrete Type or Cement Type require a custom input.  
+- Admixture/SCM rows are validated unless the user explicitly types “Nil.”  
+- The server performs second-level validation for safety.  
+- On server errors, the application:
+  - Displays an error
+  - Stops PDF generation
+  - Does NOT assign an application number  
+  This prevents invalid or unsaved records from being exported.
 
----
-
-## 🧾 PDF Generation
-
-The app automatically generates a clean, single-page PDF that includes:
-
-- UNILAG Logo
-- Student & project details
-- Mix overview
-- Materials
-- Admixtures
-- SCM replacements
-- Notes
-- Footer message
+- Local Storage ensures offline preservation of mixes.  
+- CSV export enables easy data extraction for laboratory use.
 
 ---
 
-## 👨‍💻 Credits
+## Local Storage & CSV Features
 
-Designed and implemented by **Jesuto Ilugbo** for  
-**The Concrete Laboratory, Department of Civil & Environmental Engineering, University of Lagos**.
+- Every successful submission is stored locally.  
+- A table displays application number, student, mix type, w/c ratio, and timestamp.  
+- Clicking a table row reloads that mix into the form.  
+- Users can:
+  - Export all saved mixes as a CSV file  
+  - Clear all saved mixes  
+  - Keep personal or offline archive copies effortlessly
 
+---
+
+## Credits
+
+- University of Lagos – Department of Civil & Environmental Engineering, Concrete Laboratory  
+- Jesuto Ilugbo – System Development & Frontend/Backend Implementation  
+- jsPDF – PDF generation engine  
+- Google Sheets API (`googleapis`) – Cloud data storage integration
