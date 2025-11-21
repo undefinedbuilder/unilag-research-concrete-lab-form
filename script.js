@@ -620,7 +620,7 @@ async function generatePDF(data) {
   doc.text(`Cement Type: ${data.cementType}`, rightColX, y);
   y += lh;
   doc.text(`Slump / Flow (mm): ${data.slump}`, leftColX, y);
-  doc.text(`Age to Test (days): ${data.ageDays}`, rightColX, y);
+  doc.text(`Age (days): ${data.ageDays}`, rightColX, y);
   y += lh;
   doc.text(`Number of Cubes: ${data.cubesCount}`, leftColX, y);
   y += lh + 4;
