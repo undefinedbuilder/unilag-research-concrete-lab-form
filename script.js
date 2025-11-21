@@ -57,7 +57,7 @@ function setStatusLine(message, kind = "info") {
 
 
 /* ------------------------------------------------------------
-   DYNAMIC ROWS FOR ADMIXTURES AND REPLACEMENTS
+   DYNAMIC ROWS FOR ADMIXTURES AND SCMS
 ------------------------------------------------------------ */
 function createAdmixtureRow(data = {}) {
   const row = document.createElement("div");
@@ -86,24 +86,24 @@ function createAdmixtureRow(data = {}) {
   return row;
 }
 
-function createReplacementRow(data = {}) {
+function createScmRow(data = {}) {
   const row = document.createElement("div");
   row.className = "dynamic-row";
 
   row.innerHTML = `
     <label>
-      <span class="label-line">Replacement Material (SCM) Name <span class="required-asterisk">*</span></span>
-      <input type="text" placeholder="e.g. Fly Ash" name="rep_name" value="${data.name || ""}">
+      <span class="label-line">SCM Name <span class="required-asterisk">*</span></span>
+      <input type="text" placeholder="e.g. Fly Ash" name="scm_name" value="${data.name || ""}">
     </label>
 
     <label>
       <span class="label-line">Percent (%) <span class="required-asterisk">*</span></span>
-      <input type="text" name="rep_percent" value="${data.percent || ""}">
+      <input type="text" name="scm_percent" value="${data.percent || ""}">
     </label>
 
     <label>
       <span class="label-line">Quantity (kg/m³) <span class="required-asterisk">*</span></span>
-      <input type="number" name="rep_quantity" value="${data.quantity || ""}">
+      <input type="number" name="scm_quantity" value="${data.quantity || ""}">
     </label>
 
     <button type="button" class="remove-row-btn">×</button>
@@ -114,7 +114,7 @@ function createReplacementRow(data = {}) {
 }
 
 /* ------------------------------------------------------------
-   WATER–CEMENT RATIO
+   WATER–CEMENT RATIO AND MIX RATIO (KG MODE)
 ------------------------------------------------------------ */
 function updateWCRatio() {
   const cement = parseFloat(document.getElementById("cementContent").value);
@@ -127,11 +127,41 @@ function updateWCRatio() {
   return ratio;
 }
 
+function updateMixRatio() {
+  const cement = parseFloat(document.getElementById("cementContent").value);
+  const water = parseFloat(document.getElementById("waterContent").value);
+  const fine = parseFloat(document.getElementById("fineAgg").value);
+  const medium = parseFloat(document.getElementById("mediumAgg").value);
+  const coarse = parseFloat(document.getElementById("coarseAgg").value);
+  const el = document.getElementById("mixRatioValue");
+
+  if (!el) {
+    return "";
+  }
+
+  if (isNaN(cement) || cement <= 0 || [water, fine, medium, coarse].some(v => isNaN(v))) {
+    el.textContent = "–";
+    return "";
+  }
+
+  const fineRatio = fine / cement;
+  const mediumRatio = medium / cement;
+  const coarseRatio = coarse / cement;
+  const waterRatio = water / cement;
+
+  const ratioText = `1 : ${fineRatio.toFixed(2)} : ${mediumRatio.toFixed(2)} : ${coarseRatio.toFixed(
+    2
+  )} : ${waterRatio.toFixed(2)}`;
+
+  el.textContent = ratioText;
+  return ratioText;
+}
+
 /* ------------------------------------------------------------
    VALIDATION
 ------------------------------------------------------------ */
 function validateForm() {
-  const fields = [
+  const commonFields = [
     "studentName",
     "matricNo",
     "institution",
@@ -141,14 +171,9 @@ function validateForm() {
     "concreteType",
     "cementType",
     "slump",
-    "ageToTestDays",
+    "ageDays",
     "cubesCount",
-    "notes",
-    "cementContent",
-    "waterContent",
-    "fineAgg",
-    "mediumAgg",
-    "coarseAgg"
+    "notes"
   ];
 
   let missing = [];
@@ -156,7 +181,7 @@ function validateForm() {
 
   document.querySelectorAll(".error").forEach(e => e.classList.remove("error"));
 
-  fields.forEach(id => {
+  commonFields.forEach(id => {
     const el = document.getElementById(id);
     if (!el.value.trim()) {
       el.classList.add("error");
@@ -183,6 +208,43 @@ function validateForm() {
     }
   }
 
+  const inputModeEl = document.querySelector('input[name="inputMode"]:checked');
+  const inputMode = inputModeEl ? inputModeEl.value : "kg";
+
+  if (inputMode === "kg") {
+    const kgFields = [
+      "cementContent",
+      "waterContent",
+      "fineAgg",
+      "mediumAgg",
+      "coarseAgg"
+    ];
+    kgFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el.value.trim()) {
+        el.classList.add("error");
+        missing.push(id);
+        if (!firstInvalid) firstInvalid = el;
+      }
+    });
+  } else {
+    const ratioFields = [
+      "ratioCement",
+      "ratioFine",
+      "ratioMedium",
+      "ratioCoarse",
+      "ratioWater"
+    ];
+    ratioFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el.value.trim()) {
+        el.classList.add("error");
+        missing.push(id);
+        if (!firstInvalid) firstInvalid = el;
+      }
+    });
+  }
+
   const admFirst = document.querySelector("#admixtures-container .dynamic-row");
   if (admFirst) {
     admFirst.querySelectorAll("input").forEach(inp => {
@@ -194,12 +256,12 @@ function validateForm() {
     });
   }
 
-  const repFirst = document.querySelector("#replacements-container .dynamic-row");
-  if (repFirst) {
-    repFirst.querySelectorAll("input").forEach(inp => {
+  const scmFirst = document.querySelector("#scms-container .dynamic-row");
+  if (scmFirst) {
+    scmFirst.querySelectorAll("input").forEach(inp => {
       if (!inp.value.trim()) {
         inp.classList.add("error");
-        missing.push("Replacement field");
+        missing.push("SCM field");
         if (!firstInvalid) firstInvalid = inp;
       }
     });
@@ -223,7 +285,7 @@ function validateForm() {
 ------------------------------------------------------------ */
 function collectFormData() {
   const admixtures = [];
-  const replacements = [];
+  const scms = [];
 
   document.querySelectorAll("#admixtures-container .dynamic-row").forEach(row => {
     const name = row.querySelector('input[name="adm_name"]').value.trim();
@@ -234,16 +296,50 @@ function collectFormData() {
     }
   });
 
-  document.querySelectorAll("#replacements-container .dynamic-row").forEach(row => {
-    const name = row.querySelector('input[name="rep_name"]').value.trim();
-    const percent = row.querySelector('input[name="rep_percent"]').value.trim();
-    const quantity = row.querySelector('input[name="rep_quantity"]').value.trim();
+  document.querySelectorAll("#scms-container .dynamic-row").forEach(row => {
+    const name = row.querySelector('input[name="scm_name"]').value.trim();
+    const percent = row.querySelector('input[name="scm_percent"]').value.trim();
+    const quantity = row.querySelector('input[name="scm_quantity"]').value.trim();
     if (name || percent || quantity) {
-      replacements.push({ name, percent, quantity });
+      scms.push({ name, percent, quantity });
     }
   });
 
+  const inputModeEl = document.querySelector('input[name="inputMode"]:checked');
+  const inputMode = inputModeEl ? inputModeEl.value : "kg";
+
+  let wcRatio = 0;
+  let mixRatioString = "";
+
+  if (inputMode === "kg") {
+    wcRatio = updateWCRatio();
+    mixRatioString = updateMixRatio();
+  } else {
+    const c = parseFloat(document.getElementById("ratioCement").value);
+    const f = parseFloat(document.getElementById("ratioFine").value);
+    const m = parseFloat(document.getElementById("ratioMedium").value);
+    const co = parseFloat(document.getElementById("ratioCoarse").value);
+    const w = parseFloat(document.getElementById("ratioWater").value);
+
+    if (!isNaN(c) && c > 0 && [f, m, co, w].every(v => !isNaN(v))) {
+      wcRatio = w / c;
+
+      const fineN = f / c;
+      const mediumN = m / c;
+      const coarseN = co / c;
+      const waterN = w / c;
+
+      mixRatioString = `1 : ${fineN.toFixed(2)} : ${mediumN.toFixed(2)} : ${coarseN.toFixed(
+        2
+      )} : ${waterN.toFixed(2)}`;
+    } else {
+      wcRatio = 0;
+      mixRatioString = "";
+    }
+  }
+
   return {
+    inputMode,
     studentName: document.getElementById("studentName").value.trim(),
     matricNo: document.getElementById("matricNo").value.trim(),
     institution: document.getElementById("institution").value.trim(),
@@ -259,17 +355,23 @@ function collectFormData() {
         ? document.getElementById("cementTypeOther").value.trim()
         : document.getElementById("cementType").value,
     slump: Number(document.getElementById("slump").value),
-    ageToTestDays: Number(document.getElementById("ageToTestDays").value),
+    ageDays: Number(document.getElementById("ageDays").value),
     cubesCount: Number(document.getElementById("cubesCount").value),
     notes: document.getElementById("notes").value.trim(),
     cementContent: Number(document.getElementById("cementContent").value),
     waterContent: Number(document.getElementById("waterContent").value),
-    wcRatio: updateWCRatio(),
     fineAgg: Number(document.getElementById("fineAgg").value),
     mediumAgg: Number(document.getElementById("mediumAgg").value),
     coarseAgg: Number(document.getElementById("coarseAgg").value),
+    ratioCement: Number(document.getElementById("ratioCement").value),
+    ratioFine: Number(document.getElementById("ratioFine").value),
+    ratioMedium: Number(document.getElementById("ratioMedium").value),
+    ratioCoarse: Number(document.getElementById("ratioCoarse").value),
+    ratioWater: Number(document.getElementById("ratioWater").value),
+    wcRatio,
+    mixRatioString,
     admixtures,
-    replacements
+    scms
   };
 }
 
@@ -309,14 +411,40 @@ function renderSavedMixes() {
     row.dataset.index = String(index);
     row.innerHTML = `
       <td>${m.applicationNumber || "-"}</td>
+      <td>${m.inputMode === "ratio" ? "Ratios" : "Kg/m³"}</td>
       <td>${m.studentName}</td>
       <td>${m.concreteType}</td>
-      <td>${m.slump}</td>
-      <td>${m.wcRatio.toFixed(2)}</td>
+      <td>${(m.wcRatio ?? 0).toFixed(2)}</td>
       <td>${m.timestamp}</td>
     `;
     body.appendChild(row);
   });
+}
+
+/* ------------------------------------------------------------
+   APPLY INPUT MODE TO UI (updated to toggle headings too)
+------------------------------------------------------------ */
+function applyInputModeToUI(inputMode) {
+  const kgDiv = document.getElementById("kgInputs");
+  const ratioDiv = document.getElementById("ratioInputs");
+  const modeKg = document.getElementById("modeKg");
+  const modeRatio = document.getElementById("modeRatio");
+  const kgHeading = document.getElementById("kgHeading");
+  const ratioHeading = document.getElementById("ratioHeading");
+
+  if (inputMode === "ratio") {
+    if (ratioDiv) ratioDiv.style.display = "block";
+    if (kgDiv) kgDiv.style.display = "none";
+    if (ratioHeading) ratioHeading.style.display = "block";
+    if (kgHeading) kgHeading.style.display = "none";
+    if (modeRatio) modeRatio.checked = true;
+  } else {
+    if (ratioDiv) ratioDiv.style.display = "none";
+    if (kgDiv) kgDiv.style.display = "block";
+    if (ratioHeading) ratioHeading.style.display = "none";
+    if (kgHeading) kgHeading.style.display = "block";
+    if (modeKg) modeKg.checked = true;
+  }
 }
 
 function loadMixIntoForm(mix) {
@@ -327,7 +455,7 @@ function loadMixIntoForm(mix) {
   document.getElementById("projectTitle").value = mix.projectTitle || "";
   document.getElementById("testDate").value = mix.testDate || "";
   document.getElementById("slump").value = mix.slump ?? "";
-  document.getElementById("ageToTestDays").value = mix.ageToTestDays ?? "";
+  document.getElementById("ageDays").value = mix.ageDays ?? "";
   document.getElementById("cubesCount").value = mix.cubesCount ?? "";
   document.getElementById("notes").value = mix.notes || "";
 
@@ -357,11 +485,30 @@ function loadMixIntoForm(mix) {
     cementOther.value = mix.cementType || "";
   }
 
-  document.getElementById("cementContent").value = mix.cementContent ?? "";
-  document.getElementById("waterContent").value = mix.waterContent ?? "";
-  document.getElementById("fineAgg").value = mix.fineAgg ?? "";
-  document.getElementById("mediumAgg").value = mix.mediumAgg ?? "";
-  document.getElementById("coarseAgg").value = mix.coarseAgg ?? "";
+  const mode = mix.inputMode === "ratio" ? "ratio" : "kg";
+  applyInputModeToUI(mode);
+
+  if (mode === "kg") {
+    document.getElementById("cementContent").value = mix.cementContent ?? "";
+    document.getElementById("waterContent").value = mix.waterContent ?? "";
+    document.getElementById("fineAgg").value = mix.fineAgg ?? "";
+    document.getElementById("mediumAgg").value = mix.mediumAgg ?? "";
+    document.getElementById("coarseAgg").value = mix.coarseAgg ?? "";
+    updateWCRatio();
+    updateMixRatio();
+  } else {
+    document.getElementById("cementContent").value = "";
+    document.getElementById("waterContent").value = "";
+    document.getElementById("fineAgg").value = "";
+    document.getElementById("mediumAgg").value = "";
+    document.getElementById("coarseAgg").value = "";
+
+    document.getElementById("ratioCement").value = mix.ratioCement ?? 1;
+    document.getElementById("ratioFine").value = mix.ratioFine ?? "";
+    document.getElementById("ratioMedium").value = mix.ratioMedium ?? "";
+    document.getElementById("ratioCoarse").value = mix.ratioCoarse ?? "";
+    document.getElementById("ratioWater").value = mix.ratioWater ?? "";
+  }
 
   const admContainer = document.getElementById("admixtures-container");
   admContainer.innerHTML = "";
@@ -371,15 +518,14 @@ function loadMixIntoForm(mix) {
     admContainer.appendChild(createAdmixtureRow());
   }
 
-  const repContainer = document.getElementById("replacements-container");
-  repContainer.innerHTML = "";
-  if (mix.replacements && mix.replacements.length) {
-    mix.replacements.forEach(r => repContainer.appendChild(createReplacementRow(r)));
+  const scmContainer = document.getElementById("scms-container");
+  scmContainer.innerHTML = "";
+  if (mix.scms && mix.scms.length) {
+    mix.scms.forEach(s => scmContainer.appendChild(createScmRow(s)));
   } else {
-    repContainer.appendChild(createReplacementRow());
+    scmContainer.appendChild(createScmRow());
   }
 
-  updateWCRatio();
   setStatusLine(`Loaded mix with Application Number: ${mix.applicationNumber || "N/A"}`, "info");
 }
 
@@ -448,7 +594,7 @@ async function generatePDF(data) {
   }
   doc.text(`Date/Time Generated: ${new Date().toLocaleString()}`, margin, y);
   y += lh;
-  doc.text(`Testing Date: ${data.testDate}`, margin, y);
+  doc.text(`Crushing Date: ${data.testDate}`, margin, y);
   y += lh + 4;
 
   doc.setFont("helvetica", "bold");
@@ -474,30 +620,72 @@ async function generatePDF(data) {
   doc.text(`Cement Type: ${data.cementType}`, rightColX, y);
   y += lh;
   doc.text(`Slump / Flow (mm): ${data.slump}`, leftColX, y);
-  doc.text(`Age to Test (days): ${data.ageToTestDays}`, rightColX, y);
+  doc.text(`Age to Test (days): ${data.ageDays}`, rightColX, y);
   y += lh;
   doc.text(`Number of Cubes: ${data.cubesCount}`, leftColX, y);
   y += lh + 4;
 
   doc.setFont("helvetica", "bold");
-  doc.text("Material Quantities (kg/m³)", leftColX, y);
+  doc.text("Material Quantities", leftColX, y);
   y += lh;
   doc.setFont("helvetica", "normal");
 
-  const rows = [
-    ["Cement", data.cementContent],
-    ["Water", data.waterContent],
-    ["Fine Aggregate", data.fineAgg],
-    ["Medium Aggregate", data.mediumAgg],
-    ["Coarse Aggregate", data.coarseAgg]
-  ];
-  rows.forEach(([k, v]) => {
-    doc.text(`${k}: ${Number(v).toFixed(2)}`, leftColX, y);
+  if (data.inputMode === "kg") {
+    const rows = [
+      ["Cement (kg/m³)", data.cementContent],
+      ["Water (kg/m³)", data.waterContent],
+      ["Fine Aggregate (kg/m³)", data.fineAgg],
+      ["Medium Aggregate (kg/m³)", data.mediumAgg],
+      ["Coarse Aggregate (kg/m³)", data.coarseAgg]
+    ];
+    rows.forEach(([k, v]) => {
+      doc.text(`${k}: ${Number(v).toFixed(2)}`, leftColX, y);
+      y += lh;
+    });
+    doc.text(
+      `Derived Water–Cement Ratio: ${(data.wcRatio ?? 0).toFixed(2)}`,
+      leftColX,
+      y
+    );
     y += lh;
-  });
-  doc.text(`Derived Water–Cement Ratio: ${data.wcRatio.toFixed(2)}`, leftColX, y);
-  y += lh + 4;
+    if (data.mixRatioString) {
+      doc.text(
+        `Normalized Mix Ratio (by cement): ${data.mixRatioString}`,
+        leftColX,
+        y
+      );
+      y += lh;
+    }
+  } else {
+    doc.text("Mode: Ratios (parts only, no absolute kg/m³)", leftColX, y);
+    y += lh;
+    doc.text(
+      `Cement : Fine : Medium : Coarse : Water (parts)`,
+      leftColX,
+      y
+    );
+    y += lh;
+    const ratioText = data.mixRatioString || "";
+    if (ratioText) {
+      doc.text(`Normalized Mix Ratio (by cement): ${ratioText}`, leftColX, y);
+      y += lh;
+    } else {
+      doc.text(
+        `Cement (parts): ${data.ratioCement}, Fine: ${data.ratioFine}, Medium: ${data.ratioMedium}, Coarse: ${data.ratioCoarse}, Water: ${data.ratioWater}`,
+        leftColX,
+        y
+      );
+      y += lh;
+    }
+    doc.text(
+      `Derived Water–Cement Ratio (from parts): ${(data.wcRatio ?? 0).toFixed(2)}`,
+      leftColX,
+      y
+    );
+    y += lh;
+  }
 
+  y += 4;
   doc.setFont("helvetica", "bold");
   doc.text("Chemical Admixtures", leftColX, y);
   y += lh;
@@ -538,14 +726,14 @@ async function generatePDF(data) {
   y += lh;
   doc.setFont("helvetica", "normal");
 
-  if (data.replacements && data.replacements.length) {
-    data.replacements.forEach((r, idx) => {
-      doc.text(`Replacement ${idx + 1}:`, leftColX, y);
+  if (data.scms && data.scms.length) {
+    data.scms.forEach((r, idx) => {
+      doc.text(`SCM ${idx + 1}:`, leftColX, y);
       y += lh;
 
       if (r.name && r.name.trim().length > 0) {
         doc.text(
-          `Replacement Material (SCM) Name: ${r.name}`,
+          `SCM Name: ${r.name}`,
           leftColX + 12,
           y
         );
@@ -621,73 +809,198 @@ function exportCsv() {
   if (!mixes.length) return;
 
   const headers = [
+    "RecordType",              // "MIX", "ADM", or "SCM"
     "ApplicationNumber",
+    "InputMode",
     "Timestamp",
     "StudentName",
     "MatricNo",
     "Institution",
     "Supervisor",
     "ProjectTitle",
-    "TestingDate",
+    "CrushingDate",
     "ConcreteType",
     "CementType",
     "Slump_mm",
-    "AgeToTest_days",
+    "Age_days",
     "CubesCount",
     "Cement_kgm3",
     "Water_kgm3",
-    "WCRatio",
     "FineAgg_kgm3",
     "MediumAgg_kgm3",
     "CoarseAgg_kgm3",
-    "Admixtures",
-    "Replacements",
-    "Notes"
+    "Ratio_Cement",
+    "Ratio_Fine",
+    "Ratio_Medium",
+    "Ratio_Coarse",
+    "Ratio_Water",
+    "WCRatio",
+    "MixRatioString",
+    "Notes",
+    "AdmIndex",
+    "AdmName",
+    "AdmType",
+    "AdmDosage_Lper100kg",
+    "ScmIndex",
+    "ScmName",
+    "ScmPercent",
+    "ScmQuantity_kgm3"
   ];
 
   const lines = [headers.join(",")];
 
   mixes.forEach(m => {
-    const adm = (m.admixtures || [])
-      .map(
-        (a, i) =>
-          `${i + 1}. ${a.name || ""} | ${a.type || ""} | ${a.dosage || ""}`
-      )
-      .join(" || ");
+    const appNo = m.applicationNumber || "";
+    const mode = m.inputMode || "";
+    const ts = m.timestamp || "";
+    const student = m.studentName || "";
+    const matric = m.matricNo || "";
+    const inst = m.institution || "";
+    const sup = m.supervisor || "";
+    const title = m.projectTitle || "";
+    const testDate = m.testDate || "";
+    const concType = m.concreteType || "";
+    const cemType = m.cementType || "";
+    const slump = m.slump ?? "";
+    const age = m.ageDays ?? "";
+    const cubes = m.cubesCount ?? "";
+    const cemKg = m.cementContent ?? "";
+    const waterKg = m.waterContent ?? "";
+    const fineKg = m.fineAgg ?? "";
+    const medKg = m.mediumAgg ?? "";
+    const coarseKg = m.coarseAgg ?? "";
+    const rC = m.ratioCement ?? "";
+    const rF = m.ratioFine ?? "";
+    const rM = m.ratioMedium ?? "";
+    const rCo = m.ratioCoarse ?? "";
+    const rW = m.ratioWater ?? "";
+    const wc = m.wcRatio ?? "";
+    const mixString = m.mixRatioString || "";
+    const notes = (m.notes || "").replace(/\r?\n/g, " ");
 
-    const rep = (m.replacements || [])
-      .map(
-        (r, i) =>
-          `${i + 1}. ${r.name || ""} | ${r.percent || ""}% | ${r.quantity || ""}`
-      )
-      .join(" || ");
-
-    const row = [
-      m.applicationNumber || "",
-      m.timestamp || "",
-      m.studentName || "",
-      m.matricNo || "",
-      m.institution || "",
-      m.supervisor || "",
-      m.projectTitle || "",
-      m.testDate || "",
-      m.concreteType || "",
-      m.cementType || "",
-      m.slump ?? "",
-      m.ageToTestDays ?? "",
-      m.cubesCount ?? "",
-      m.cementContent ?? "",
-      m.waterContent ?? "",
-      m.wcRatio ?? "",
-      m.fineAgg ?? "",
-      m.mediumAgg ?? "",
-      m.coarseAgg ?? "",
-      adm,
-      rep,
-      (m.notes || "").replace(/\r?\n/g, " ")
+    // -----------------------
+    // 1) Main MIX row
+    // -----------------------
+    const mixRow = [
+      "MIX",
+      appNo,
+      mode,
+      ts,
+      student,
+      matric,
+      inst,
+      sup,
+      title,
+      testDate,
+      concType,
+      cemType,
+      slump,
+      age,
+      cubes,
+      cemKg,
+      waterKg,
+      fineKg,
+      medKg,
+      coarseKg,
+      rC,
+      rF,
+      rM,
+      rCo,
+      rW,
+      wc,
+      mixString,
+      notes,
+      "",   // AdmIndex
+      "",   // AdmName
+      "",   // AdmType
+      "",   // AdmDosage_Lper100kg
+      "",   // ScmIndex
+      "",   // ScmName
+      "",   // ScmPercent
+      ""    // ScmQuantity_kgm3
     ].map(v => `"${String(v).replace(/"/g, '""')}"`);
 
-    lines.push(row.join(","));
+    lines.push(mixRow.join(","));
+
+    // -----------------------
+    // 2) Admixture rows
+    // -----------------------
+    if (Array.isArray(m.admixtures)) {
+      m.admixtures.forEach((a, idx) => {
+        const admRow = [
+          "ADM",           // RecordType
+          appNo,
+          mode,
+          ts,
+          student,
+          "",              // MatricNo (can leave blank here)
+          "",              // Institution
+          "",              // Supervisor
+          "",              // ProjectTitle
+          "",              // CrushingDate
+          "",              // ConcreteType
+          "",              // CementType
+          "",              // Slump_mm
+          "",              // Age_days
+          "",              // CubesCount
+          "", "", "", "",  // kg/m3 fields
+          "", "", "", "", "", // ratio fields
+          "",              // WCRatio
+          "",              // MixRatioString
+          "",              // Notes
+          idx + 1,         // AdmIndex (1-based)
+          a.name || "",
+          a.type || "",
+          a.dosage || "",
+          "",              // ScmIndex
+          "",              // ScmName
+          "",              // ScmPercent
+          ""               // ScmQuantity_kgm3
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`);
+
+        lines.push(admRow.join(","));
+      });
+    }
+
+    // -----------------------
+    // 3) SCM rows
+    // -----------------------
+    if (Array.isArray(m.scms)) {
+      m.scms.forEach((s, idx) => {
+        const scmRow = [
+          "SCM",           // RecordType
+          appNo,
+          mode,
+          ts,
+          student,
+          "",              // MatricNo
+          "",              // Institution
+          "",              // Supervisor
+          "",              // ProjectTitle
+          "",              // CrushingDate
+          "",              // ConcreteType
+          "",              // CementType
+          "",              // Slump_mm
+          "",              // Age_days
+          "",              // CubesCount
+          "", "", "", "",  // kg/m3 fields
+          "", "", "", "", "", // ratio fields
+          "",              // WCRatio
+          "",              // MixRatioString
+          "",              // Notes
+          "",              // AdmIndex
+          "",              // AdmName
+          "",              // AdmType
+          "",              // AdmDosage_Lper100kg
+          idx + 1,         // ScmIndex (1-based)
+          s.name || "",
+          s.percent || "",
+          s.quantity || ""
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`);
+
+        lines.push(scmRow.join(","));
+      });
+    }
   });
 
   const blob = new Blob([lines.join("\r\n")], {
@@ -696,7 +1009,7 @@ function exportCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "unilag_research_mixes.csv";
+  a.download = "unilag_research_mixes_full.csv";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -767,6 +1080,12 @@ async function submitForm(event) {
 
   data.applicationNumber = result.recordId;
   data.timestamp = new Date().toLocaleString();
+  if (typeof result.wcRatio === "number") {
+    data.wcRatio = result.wcRatio;
+  }
+  if (typeof result.mixRatioString === "string" && result.mixRatioString) {
+    data.mixRatioString = result.mixRatioString;
+  }
 
   saveLocal(data);
   renderSavedMixes();
@@ -798,8 +1117,8 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("admixtures-container")
     .appendChild(createAdmixtureRow());
   document
-    .getElementById("replacements-container")
-    .appendChild(createReplacementRow());
+    .getElementById("scms-container")
+    .appendChild(createScmRow());
 
   document.getElementById("concreteType").onchange = function () {
     const wrapper = document.getElementById("concreteTypeOtherWrapper");
@@ -821,8 +1140,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  document.getElementById("cementContent").oninput = updateWCRatio;
-  document.getElementById("waterContent").oninput = updateWCRatio;
+  document.getElementById("cementContent").oninput = () => {
+    updateWCRatio();
+    updateMixRatio();
+  };
+  document.getElementById("waterContent").oninput = () => {
+    updateWCRatio();
+    updateMixRatio();
+  };
+  document.getElementById("fineAgg").oninput = updateMixRatio;
+  document.getElementById("mediumAgg").oninput = updateMixRatio;
+  document.getElementById("coarseAgg").oninput = updateMixRatio;
 
   document.getElementById("mix-form").onsubmit = submitForm;
 
@@ -831,24 +1159,33 @@ document.addEventListener("DOMContentLoaded", () => {
       .getElementById("admixtures-container")
       .appendChild(createAdmixtureRow());
 
-  document.getElementById("add-replacement-btn").onclick = () =>
+  document.getElementById("add-scm-btn").onclick = () =>
     document
-      .getElementById("replacements-container")
-      .appendChild(createReplacementRow());
+      .getElementById("scms-container")
+      .appendChild(createScmRow());
+
+  const modeKg = document.getElementById("modeKg");
+  const modeRatio = document.getElementById("modeRatio");
+
+  modeKg.onchange = () => applyInputModeToUI("kg");
+  modeRatio.onchange = () => applyInputModeToUI("ratio");
 
   document.getElementById("reset-form-btn").onclick = () => {
     document.getElementById("mix-form").reset();
     setDateToToday(testDateEl);
 
     document.getElementById("admixtures-container").innerHTML = "";
-    document.getElementById("replacements-container").innerHTML = "";
+    document.getElementById("scms-container").innerHTML = "";
     document
       .getElementById("admixtures-container")
       .appendChild(createAdmixtureRow());
     document
-      .getElementById("replacements-container")
-      .appendChild(createReplacementRow());
+      .getElementById("scms-container")
+      .appendChild(createScmRow());
+
+    applyInputModeToUI("kg");
     updateWCRatio();
+    updateMixRatio();
     document.getElementById("form-error-summary").style.display = "none";
     setStatusLine("", "info");
   };
@@ -876,6 +1213,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Escape") closeModal();
   });
 
+  applyInputModeToUI("kg");
   renderSavedMixes();
   document.getElementById("year").textContent = new Date().getFullYear();
 });

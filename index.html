@@ -18,7 +18,7 @@
       <h1>The Department of Civil &amp; Environmental Engineering</h1>
       <h2>CONCRETE LABORATORY, UNIVERSITY OF LAGOS</h2>
       <p class="notice">
-        <strong>NOTE:</strong> For research purposes only. Enter 0 for any component that is not used.
+        <strong>NOTE:</strong> For research purposes only. Enter 0 for any component that is not used in kg/m³ mode.
       </p>
     </header>
 
@@ -77,7 +77,7 @@
           <div class="grid two">
             <label>
               <span class="label-line">
-                Testing Date <span class="required-asterisk">*</span>
+                Crushing Date <span class="required-asterisk">*</span>
               </span>
               <input type="date" id="testDate" />
             </label>
@@ -134,9 +134,9 @@
 
             <label>
               <span class="label-line">
-                Age to Test (days) <span class="required-asterisk">*</span>
+                Age (days) <span class="required-asterisk">*</span>
               </span>
-              <input type="number" min="1" id="ageToTestDays" />
+              <input type="number" min="1" id="ageDays" />
             </label>
 
             <label>
@@ -145,7 +145,6 @@
               </span>
               <input type="number" min="1" id="cubesCount" />
             </label>
-            
           </div>
 
           <label class="full">
@@ -155,49 +154,116 @@
             <textarea id="notes" rows="3"></textarea>
           </label>
 
-          <!-- MATERIAL QUANTITIES -->
-          <h4 class="section-title">Material Quantities (kg/m³)</h4>
+          <!-- MIX INPUT MODE -->
+          <h4 class="section-title">Mix Input Mode</h4>
 
           <div class="grid two">
             <label>
               <span class="label-line">
-                Cement (kg/m³) <span class="required-asterisk">*</span>
+                <input type="radio" name="inputMode" value="kg" id="modeKg" checked />
+                &nbsp; Input Material Quantities in kg/m³
               </span>
-              <input type="number" min="0" step="0.1" id="cementContent" />
             </label>
-
             <label>
               <span class="label-line">
-                Water (kg/m³) <span class="required-asterisk">*</span>
+                <input type="radio" name="inputMode" value="ratio" id="modeRatio" />
+                &nbsp; Input Material Quantities in Ratios
               </span>
-              <input type="number" min="0" step="0.1" id="waterContent" />
-            </label>
-
-            <label>
-              <span class="label-line">
-                Fine Aggregate (kg/m³) <span class="required-asterisk">*</span>
-              </span>
-              <input type="number" min="0" step="0.1" id="fineAgg" />
-            </label>
-
-            <label>
-              <span class="label-line">
-                Medium Aggregate (kg/m³) <span class="required-asterisk">*</span>
-              </span>
-              <input type="number" min="0" step="0.1" id="mediumAgg" />
-            </label>
-
-            <label>
-              <span class="label-line">
-                Coarse Aggregate (kg/m³) <span class="required-asterisk">*</span>
-              </span>
-              <input type="number" min="0" step="0.1" id="coarseAgg" />
             </label>
           </div>
 
-          <div id="wcratio-box" class="wc-box">
-            <strong>Water–Cement Ratio:</strong>
-            <span id="wcRatioValue">0.00</span>
+          <!-- MATERIAL QUANTITIES (KG/M3) -->
+          <h4 id="kgHeading" class="section-title">Material Quantities – Kg/m³</h4>
+
+          <div id="kgInputs">
+            <div class="grid two">
+              <label>
+                <span class="label-line">
+                  Cement (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="cementContent" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Water (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="waterContent" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Fine Aggregate (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="fineAgg" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Medium Aggregate (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="mediumAgg" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Coarse Aggregate (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="coarseAgg" />
+              </label>
+            </div>
+
+            <div id="wcratio-box" class="wc-box">
+              <strong>Water–Cement Ratio (from kg/m³):</strong>
+              <span id="wcRatioValue">0.00</span>
+            </div>
+
+            <div id="mixratio-box" class="wc-box">
+              <strong>Normalized Mix Ratio (by cement, from kg/m³):</strong>
+              <span id="mixRatioValue">–</span>
+            </div>
+          </div>
+
+          <!-- MATERIAL QUANTITIES (RATIOS) -->
+          <h4 id="ratioHeading" class="section-title">Material Quantities – Ratios</h4>
+
+          <div id="ratioInputs" style="display:none;">
+            <div class="grid two">
+              <label>
+                <span class="label-line">
+                  Cement (parts) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioCement" value="1" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Fine Aggregate (parts) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioFine" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Medium Aggregate (parts) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioMedium" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Coarse Aggregate (parts) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioCoarse" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Water (parts) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioWater" />
+              </label>
+            </div>
           </div>
 
           <!-- CHEMICAL ADMIXTURES -->
@@ -214,10 +280,10 @@
           <h4 class="section-title">Partial Cement Replacements (SCMs)</h4>
           <p class="subtle">If none, you may enter one row and type “Nil”.</p>
 
-          <div id="replacements-container" class="dynamic-group"></div>
+          <div id="scms-container" class="dynamic-group"></div>
 
-          <button type="button" id="add-replacement-btn" class="btn-primary small">
-            + Add Replacement
+          <button type="button" id="add-scm-btn" class="btn-primary small">
+            + Add SCM
           </button>
 
           <!-- ACTIONS AND STATUS -->
@@ -248,9 +314,9 @@
             <thead>
               <tr>
                 <th>App No</th>
+                <th>Mode</th>
                 <th>Student</th>
                 <th>Type</th>
-                <th>Slump</th>
                 <th>W/C</th>
                 <th>Saved</th>
               </tr>
@@ -272,7 +338,7 @@
           <button id="modalClose" type="button" class="modal-x" aria-label="Close dialog">×</button>
         </div>
         <div class="modal-body">
-          <div class="modal-number" id="modalNumber">UNILAG-CR-A000001</div>
+          <div class="modal-number" id="modalNumber">UNILAG-CR-K000001</div>
           <div class="modal-note">
             Please keep this number safe and quote it in all discussions with the Concrete Laboratory.
           </div>
@@ -282,9 +348,8 @@
 
     <!-- FOOTER -->
     <footer class="footer">
-      © <span id="year"></span> Designed by Jesuto Ilugbo for The University of Lagos' Concrete Laboratory
+      © <span id="year"></span> Designed by Jesuto Ilugbo for The Concrete Laboratory, University of Lagos.
     </footer>
   </main>
 </body>
-
 </html>
