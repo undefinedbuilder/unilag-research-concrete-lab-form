@@ -1104,6 +1104,49 @@ async function submitForm(event) {
   );
 }
 
+/* ------------------------------------------
+   CONCRETE DISINTEGRATION CURSOR TRAIL
+------------------------------------------- */
+
+let lastConcreteParticleTime = 0;
+
+function spawnConcreteParticle(x, y) {
+  const particle = document.createElement("div");
+  particle.className = "concrete-particle";
+
+  const r = Math.random();
+  if (r < 0.33) particle.dataset.size = "sm";
+  else if (r > 0.7) particle.dataset.size = "lg";
+
+  const dx = (Math.random() * 18 - 9).toFixed(1);
+  const dy = (8 + Math.random() * 18).toFixed(1);
+  const scale = (0.6 + Math.random() * 0.8).toFixed(2);
+
+  particle.style.setProperty("--particle-dx", dx + "px");
+  particle.style.setProperty("--particle-dy", dy + "px");
+  particle.style.setProperty("--particle-scale", scale);
+
+  particle.style.left = x + "px";
+  particle.style.top = y + "px";
+
+  document.body.appendChild(particle);
+
+  particle.addEventListener("animationend", () => particle.remove());
+}
+
+function handleConcreteTrail(e) {
+  const now = performance.now();
+  if (now - lastConcreteParticleTime < 18) return;
+  lastConcreteParticleTime = now;
+
+  const count = 1 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    spawnConcreteParticle(e.clientX, e.clientY);
+  }
+}
+
+document.addEventListener("pointermove", handleConcreteTrail);
+
 /* ------------------------------------------------------------
    PAGE INITIALISATION
 ------------------------------------------------------------ */
@@ -1218,4 +1261,5 @@ document.addEventListener("DOMContentLoaded", () => {
   applyInputModeToUI("kg");
   renderSavedMixes();
   document.getElementById("year").textContent = new Date().getFullYear();
+
 });
