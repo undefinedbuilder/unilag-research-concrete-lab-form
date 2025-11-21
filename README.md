@@ -1,128 +1,107 @@
-# UNILAG Concrete Laboratory – Student Research Mix Intake & PDF Report System
+# UNILAG Concrete Lab – Research Mix Intake Webform
 
 ---
 
-## What the System Does (End-to-End)
+## What the System Does
 
-1. **Student fills the Research Mix Form** (`index.html`) with all required research details: personal info, project info, mix design, quantities, admixtures, SCMs, slump, age, notes, etc.
+1. **User fills the Research Mix Form** (`index.html`) with all required student, mix, and project details.
+2. **Styling** (`style.css`) ensures a clean, responsive, professional UNILAG-branded interface.
+3. **Client script** (`script.js`):
+   - Validates all required fields (text, numeric, dates, ratios, kg/m³ values).
+   - Dynamically handles **Admixtures** and **SCMs** with add/remove rows.
+   - Auto-calculates:
+     - **Water–Cement Ratio**
+     - **Normalized Mix Ratio** (for both kg/m³ mode and ratio mode)
+   - Allows switching between:
+     - **Kg/m³ Input Mode**, or  
+     - **Ratio Input Mode**
+   - Sends data to the backend (`/api/submit`) for Sheets storage.
+   - Saves a full local copy inside **LocalStorage** for offline retrieval.
+   - Generates a **UNILAG-header PDF** with logo, details, and an “Office Use Only” section.
+   - Shows a modal containing the **Application Number** assigned by the server.
 
-2. **Styling and Layout** (`style.css`) ensures a modern, responsive and accessible interface consistent with academic laboratory standards.
+4. **Server function** (`submit.js`):
+   - Ensures request method is **POST** and validates all required fields.
+   - Determines whether data belongs to:
+     - **Research Sheet (Kg/m3)** or  
+     - **Research Sheet (Ratios)**
+   - Reads the **last used Application Number** from the correct sheet.
+   - Computes the next ID using the format:  
+     **`UNILAG-CR-Kxxxxxx`** or **`UNILAG-CR-Rxxxxxx`**
+   - Calculates w/c ratio and mix ratio (if missing).
+   - Saves:
+     - 1 main record row  
+     - All **Admixtures** to *Research Admixtures*  
+     - All **SCMs** to *Research SCMs*
+   - Returns `{ success: true, recordId, wcRatio, mixRatioString }`.
 
-3. **Client-Side Logic** (`script.js`) manages:
-   - Input validation for all required fields (numeric fields may be `0`).
-   - Dynamic rows for *Chemical Admixtures* and *Partial Cement Replacements (SCMs)*.
-   - Automatic calculation of the **Water–Cement Ratio**.
-   - Local saving of submitted mixes in **browser Local Storage**.
-   - Table view of all locally saved mixes.
-   - Ability to reload past mixes into the form.
-   - CSV export of all saved mixes.
-   - Clean error summaries and status indicators.
-   - Sending the full payload to the server endpoint (`/api/submit`).
-   - Receiving the server-generated **Application Number**.
-   - Automatic generation of a structured **PDF report** using jsPDF.
-   - Display of a modal showing the assigned **Application Number**.
+5. **package.json**
+   - Declares `googleapis` for server-side Sheets integration.
 
-4. **Serverless API Endpoint** (`/api/submit` in `submit.js`):
-   - Accepts **POST** only.
-   - Validates presence of all mandatory fields.
-   - Reads the **last used Application Number** from Column A of the Google Sheet.
-   - Generates the next ID in the format:
-     ```
-     UNILAG-CR-A000001 → UNILAG-CR-A000002 → … → UNILAG-CR-A999999
-     → UNILAG-CR-B000001 → … → UNILAG-CR-Z999999 → rolls back to A000001
-     ```
-   - Appends the full record into `Research Sheet!A:V`, including timestamp and derived water–cement ratio.
-   - Returns `{ success: true, recordId }` back to the browser.
-
-5. **Dependencies** (`package.json`) include:
-   - `googleapis` for interacting with Google Sheets.
+---
 
 ---
 
 ## Environment & Deployment
 
 ### Required Environment Variables
-Ensure these are set in the deployment platform (e.g., Vercel):
 
-- `GOOGLE_SERVICE_CREDENTIALS`  
-  The complete Google Service Account JSON as a single string.
+Set these in your deployment platform:
+GOOGLE_SERVICE_CREDENTIALS = (Stringified JSON of Google Service Account)
+SHEET_ID = (Google Spreadsheet ID)
 
-- `SHEET_ID`  
-  The Google Sheet ID from the spreadsheet URL.
+### Google Sheets Setup
 
-If either is missing, the API returns:
-Server not configured (missing credentials)
+You must create **three sheets** in the same spreadsheet:
 
----
+1. **Research Sheet (Kg/m3)**  
+2. **Research Sheet (Ratios)**  
+3. **Research Admixtures**  
+4. **Research SCMs**
 
-## Google Sheet Setup
+Ensure the column structure matches the `submit.js` layout for each sheet.
 
-Create a Google Sheet with a tab named:
+#### Required Column Sections (Main Research Sheets)
 
-### **Research Sheet**
+Columns typically include:
 
-Ensure columns A–V follow this order (matching the appended row):
+- Application Number  
+- Timestamp  
+- Student & Project Info  
+- Concrete Type, Cement Type, Slump  
+- Either **kg/m³ values** or **ratio values**  
+- Derived W/C  
+- Derived Mix Ratio  
+- Notes
 
-1. Application Number  
-2. Timestamp  
-3. Student Name  
-4. Matric / Reg. No.  
-5. Institution  
-6. Supervisor  
-7. Project Title  
-8. Age to Test (days)  
-9. Cubes Count  
-10. Testing Date  
-11. Concrete Type  
-12. Cement Type  
-13. Slump (mm)  
-14. Cement Content (kg/m³)  
-15. Water Content (kg/m³)  
-16. Water–Cement Ratio  
-17. Fine Aggregate (kg/m³)  
-18. Medium Aggregate (kg/m³)  
-19. Coarse Aggregate (kg/m³)  
-20. Admixtures (flattened string)  
-21. Replacements (flattened string)  
-22. Notes  
-
-> The API writes to `Research Sheet!A:V`.  
-> Rename or adjust only if you modify the code.
+> The API writes to ranges like:  
+> `Research Sheet (Kg/m3)!A:U` or  
+> `Research Sheet (Ratios)!A:U`  
+> Make sure the ranges match your actual sheet names.
 
 ---
 
-## Notes on Validation, Reliability & Safety
-
-- All required fields must be completed before submission.  
-- “Other” selections for Concrete Type or Cement Type require a custom input.  
-- Admixture/SCM rows are validated unless the user explicitly types “Nil.”  
-- The server performs second-level validation for safety.  
-- On server errors, the application:
-  - Displays an error
-  - Stops PDF generation
-  - Does NOT assign an application number  
-  This prevents invalid or unsaved records from being exported.
-
-- Local Storage ensures offline preservation of mixes.  
-- CSV export enables easy data extraction for laboratory use.
-
 ---
 
-## Local Storage & CSV Features
+## Notes on Validation, Calculations & Safety
 
-- Every successful submission is stored locally.  
-- A table displays application number, student, mix type, w/c ratio, and timestamp.  
-- Clicking a table row reloads that mix into the form.  
-- Users can:
-  - Export all saved mixes as a CSV file  
-  - Clear all saved mixes  
-  - Keep personal or offline archive copies effortlessly
+- The form **blocks submission** until all mandatory fields are valid.
+- Errors are shown clearly using highlighted fields and a summary box.
+- **Offline saving** is automatic — every successful submission is stored in LocalStorage.
+- W/C ratio and Mix Ratio are re-computed both client-side and server-side to ensure consistency.
+- The Application Number is assigned **exclusively on the server**, ensuring uniqueness.
+- A modal confirms successful save with the generated **Application Number**.
+- No PDF is created unless the Google Sheets save succeeds.
 
 ---
 
 ## Credits
 
-- University of Lagos – Department of Civil & Environmental Engineering, Concrete Laboratory  
-- Jesuto Ilugbo – System Development & Frontend/Backend Implementation  
-- jsPDF – PDF generation engine  
-- Google Sheets API (`googleapis`) – Cloud data storage integration
+- **University of Lagos – Department of Civil & Environmental Engineering, Concrete Laboratory**  
+- Built with:  
+  - jsPDF for PDF generation  
+  - Google Sheets API for cloud storage  
+  - Vanilla JavaScript for client logic  
+  - Custom UNILAG-themed UI styling
+
+---

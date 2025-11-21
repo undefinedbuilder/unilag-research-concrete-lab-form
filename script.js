@@ -631,6 +631,8 @@ async function generatePDF(data) {
   doc.setFont("helvetica", "normal");
 
   if (data.inputMode === "kg") {
+    doc.text("Mode: Ratios", leftColX, y);
+    y += lh;
     const rows = [
       ["Cement (kg/m³)", data.cementContent],
       ["Water (kg/m³)", data.waterContent],
@@ -657,7 +659,7 @@ async function generatePDF(data) {
       y += lh;
     }
   } else {
-    doc.text("Mode: Ratios (parts only, no absolute kg/m³)", leftColX, y);
+    doc.text("Mode: Ratios", leftColX, y);
     y += lh;
     doc.text(
       `Cement : Fine : Medium : Coarse : Water (parts)`,
