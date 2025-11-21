@@ -167,7 +167,7 @@ function validateForm() {
     "institution",
     "supervisor",
     "projectTitle",
-    "testDate",
+    "crushDate",
     "concreteType",
     "cementType",
     "slump",
@@ -345,7 +345,7 @@ function collectFormData() {
     institution: document.getElementById("institution").value.trim(),
     supervisor: document.getElementById("supervisor").value.trim(),
     projectTitle: document.getElementById("projectTitle").value.trim(),
-    testDate: document.getElementById("testDate").value,
+    crushDate: document.getElementById("crushDate").value,
     concreteType:
       document.getElementById("concreteType").value === "Other"
         ? document.getElementById("concreteTypeOther").value.trim()
@@ -453,7 +453,7 @@ function loadMixIntoForm(mix) {
   document.getElementById("institution").value = mix.institution || "";
   document.getElementById("supervisor").value = mix.supervisor || "";
   document.getElementById("projectTitle").value = mix.projectTitle || "";
-  document.getElementById("testDate").value = mix.crushDate || "";
+  document.getElementById("crushDate").value = mix.crushDate || "";
   document.getElementById("slump").value = mix.slump ?? "";
   document.getElementById("ageDays").value = mix.ageDays ?? "";
   document.getElementById("cubesCount").value = mix.cubesCount ?? "";
@@ -594,7 +594,7 @@ async function generatePDF(data) {
   }
   doc.text(`Date/Time Generated: ${new Date().toLocaleString()}`, margin, y);
   y += lh;
-  doc.text(`Crushing Date: ${data.testDate}`, margin, y);
+  doc.text(`Crushing Date: ${data.crushDate}`, margin, y);
   y += lh + 4;
 
   doc.setFont("helvetica", "bold");
@@ -891,7 +891,7 @@ function exportCsv() {
       inst,
       sup,
       title,
-      testDate,
+      crushDate,
       concType,
       cemType,
       slump,
@@ -1106,8 +1106,8 @@ async function submitForm(event) {
    PAGE INITIALISATION
 ------------------------------------------------------------ */
 document.addEventListener("DOMContentLoaded", () => {
-  const testDateEl = document.getElementById("testDate");
-  setDateToToday(testDateEl);
+  const crushDateEl = document.getElementById("crushDate");
+  setDateToToday(crushDateEl);
 
   loadImageAsDataURL("unilag-logo.png").then(d => {
     logoImageDataUrl = d;
@@ -1172,7 +1172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("reset-form-btn").onclick = () => {
     document.getElementById("mix-form").reset();
-    setDateToToday(testDateEl);
+    setDateToToday(crushDateEl);
 
     document.getElementById("admixtures-container").innerHTML = "";
     document.getElementById("scms-container").innerHTML = "";
