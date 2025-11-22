@@ -772,34 +772,18 @@ tbody tr:hover {
   border-radius: 18px;
   box-shadow: 0 18px 36px rgba(63, 54, 45, 0.75);
   width: min(380px, 92vw);
-  padding: 14px 16px 18px;
+  padding: 48px 16px 18px;
   border: 2px dashed rgba(168, 151, 123, 0.98);
   position: relative;
   overflow: hidden;
 }
 
-.modal-header h4,
-.modal-number {
-  margin-right: 48px; /* reserves space for the close (X) button */
-}
-
-.modal-card {
-  padding-top: 40px !important; /* pushes content downward so top elements don't collide */
-}
-
-.modal-x {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 20;
-}
-
-/* corner stamp */
+/* FILE NO. stamp – now on the LEFT */
 .modal-card::before {
   content: "FILE NO.";
   position: absolute;
   top: 10px;
-  right: 16px;
+  left: 12px;
   font-family: var(--font-type);
   font-size: 0.7rem;
   letter-spacing: 0.2em;
@@ -810,6 +794,7 @@ tbody tr:hover {
   transform: rotate(-9deg);
 }
 
+/* Header row (title + close) */
 .modal-header {
   display: flex;
   align-items: center;
@@ -827,7 +812,11 @@ tbody tr:hover {
   color: var(--ink-main);
 }
 
+/* Close button – fixed top-right */
 .modal-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
   border-radius: 999px;
   border: none;
   background: #e1d3c0;
@@ -837,6 +826,7 @@ tbody tr:hover {
   line-height: 1;
   cursor: pointer;
   color: #473a2c;
+  z-index: 20;
 }
 
 .modal-x:hover {
@@ -848,6 +838,7 @@ tbody tr:hover {
   color: var(--ink-main);
 }
 
+/* Application / File number display */
 .modal-number {
   font-family: var(--font-type);
   font-size: 0.9rem;
@@ -880,3 +871,4 @@ tbody tr:hover {
   text-align: center;
 
 }
+
