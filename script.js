@@ -581,7 +581,7 @@ const generatePDF = async (data) => {
   doc.setFont("helvetica", "normal");
   [
     `Student Name: ${data.studentName}`,
-    `Matric Number: ${data.matricNumber}`,
+    `Matriculation Number: ${data.matricNumber}`,
     `Programme: ${data.programme}`,
     `Supervisor: ${data.supervisorName}`,
     `Student Phone: ${data.studentPhone}`,
@@ -934,6 +934,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSavedRecords();
 
 });
+
 
 
 
