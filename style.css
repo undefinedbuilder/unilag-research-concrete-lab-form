@@ -778,6 +778,22 @@ tbody tr:hover {
   overflow: hidden;
 }
 
+.modal-header h4,
+.modal-number {
+  margin-right: 48px; /* reserves space for the close (X) button */
+}
+
+.modal-card {
+  padding-top: 40px !important; /* pushes content downward so top elements don't collide */
+}
+
+.modal-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 20;
+}
+
 /* corner stamp */
 .modal-card::before {
   content: "FILE NO.";
@@ -862,4 +878,5 @@ tbody tr:hover {
   font-size: 0.78rem;
   color: var(--ink-muted);
   text-align: center;
+
 }
