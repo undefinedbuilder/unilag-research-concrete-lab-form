@@ -456,7 +456,7 @@ input[type="radio"] {
 .wc-box {
   margin-top: 10px;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: 6px;
   background: #f3ebdd;
   border: 1px dashed rgba(161, 146, 118, 0.9);
   font-size: 0.8rem;
@@ -478,7 +478,7 @@ input[type="radio"] {
   font-family: var(--font-type);
   font-size: 0.8rem;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: 10px;
   background: #fbf6ea;
   border: 1px solid rgba(126, 111, 92, 0.9);
 }
@@ -871,6 +871,7 @@ tbody tr:hover {
   text-align: center;
 
 }
+
 
 
 
