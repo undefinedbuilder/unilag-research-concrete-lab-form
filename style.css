@@ -478,7 +478,7 @@ input[type="radio"] {
   font-family: var(--font-type);
   font-size: 0.8rem;
   padding: 3px 8px;
-  border-radius: 10px;
+  border-radius: 6px;
   background: #fbf6ea;
   border: 1px solid rgba(126, 111, 92, 0.9);
 }
@@ -871,6 +871,7 @@ tbody tr:hover {
   text-align: center;
 
 }
+
 
 
 
