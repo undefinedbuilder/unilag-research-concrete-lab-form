@@ -1,12 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UNILAG Concrete Research Mix Intake Form</title>
+  <title>UNILAG Concrete Lab – External Client Cube Test Form</title>
 
   <link rel="stylesheet" href="style.css" />
+  <!-- jsPDF for PDF generation -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <!-- Main front-end logic -->
   <script src="script.js" defer></script>
 </head>
 
@@ -15,10 +18,16 @@
     <!-- HEADER -->
     <header class="header">
       <img src="unilag-logo.png" class="logo" alt="UNILAG Logo" />
-      <h1>The Department of Civil &amp; Environmental Engineering</h1>
-      <h2>CONCRETE LABORATORY, UNIVERSITY OF LAGOS</h2>
+
+      <div class="header-text">
+        <div class="header-university">UNIVERSITY OF LAGOS</div>
+        <div class="header-dept">Department of Civil &amp; Environmental Engineering</div>
+        <div class="header-lab">CONCRETE LABORATORY</div>
+      </div>
+
       <p class="notice">
-        <strong>NOTE:</strong> For research purposes only. Enter 0 for any component that is not used
+        <strong>NOTE:</strong> For external clients and commercial cube tests. Enter 0 for any
+        component that is not used.
       </p>
     </header>
 
@@ -26,50 +35,63 @@
     <div class="main-grid">
       <!-- FORM -->
       <section class="card">
-        <h3>Student Research Mix Form</h3>
-
-        <div id="form-error-summary" class="error-summary"></div>
+        <h3>External Client Cube Test Form</h3>
 
         <form id="mix-form">
-          <!-- STUDENT AND PROJECT DETAILS -->
-          <h4 class="section-title">Student &amp; Project Details</h4>
+          <!-- CLIENT AND PROJECT DETAILS -->
+          <h4 class="section-title">Client &amp; Project Details</h4>
 
           <div class="grid two">
             <label>
               <span class="label-line">
-                Student Name <span class="required-asterisk">*</span>
+                Company / Client Name <span class="required-asterisk">*</span>
               </span>
-              <input type="text" id="studentName" />
+              <input type="text" id="clientName" />
             </label>
 
             <label>
               <span class="label-line">
-                Matric / Reg. No. <span class="required-asterisk">*</span>
+                Contact Email <span class="required-asterisk">*</span>
               </span>
-              <input type="text" id="matricNo" />
+              <input type="email" id="contactEmail" />
             </label>
 
             <label>
               <span class="label-line">
-                Institution <span class="required-asterisk">*</span>
+                Organisation Type <span class="required-asterisk">*</span>
               </span>
-              <input type="text" id="institution" placeholder="e.g., University of Lagos" />
+              <input
+                type="text"
+                id="organisationType"
+                placeholder="e.g., Construction Company, Consulting Firm"
+              />
             </label>
 
             <label>
               <span class="label-line">
-                Supervisor <span class="required-asterisk">*</span>
+                Contact Person <span class="required-asterisk">*</span>
               </span>
-              <input type="text" id="supervisor" />
+              <input type="text" id="contactPerson" />
+            </label>
+
+            <label>
+              <span class="label-line">
+                Contact Phone Number <span class="required-asterisk">*</span>
+              </span>
+              <input type="tel" id="phoneNumber" />
+            </label>
+
+            <label>
+              <span class="label-line">
+                Project / Site <span class="required-asterisk">*</span>
+              </span>
+              <input
+                type="text"
+                id="projectSite"
+                placeholder="e.g., Lekki Phase 1"
+              />
             </label>
           </div>
-
-          <label class="full">
-            <span class="label-line">
-              Project Title <span class="required-asterisk">*</span>
-            </span>
-            <input type="text" id="projectTitle" />
-          </label>
 
           <!-- MIX DESIGN OVERVIEW -->
           <h4 class="section-title">Mix Design Overview</h4>
@@ -97,7 +119,7 @@
               </select>
             </label>
 
-            <label id="concreteTypeOtherWrapper" style="display:none;">
+            <label id="concreteTypeOtherWrapper" style="display: none;">
               <span class="label-line">
                 Specify Concrete Type <span class="required-asterisk">*</span>
               </span>
@@ -110,15 +132,15 @@
               </span>
               <select id="cementType">
                 <option value="">-- Select --</option>
-                <option>OPC</option>
-                <option>Rapid Hardening</option>
-                <option>Portland Limestone</option>
+                <option>Ordinary Portland Cement</option>
+                <option>Rapid Hardening Cement</option>
+                <option>Portland Limestone Cement</option>
                 <option>Blended (CEM II)</option>
                 <option>Other</option>
               </select>
             </label>
 
-            <label id="cementTypeOtherWrapper" style="display:none;">
+            <label id="cementTypeOtherWrapper" style="display: none;">
               <span class="label-line">
                 Specify Cement Type <span class="required-asterisk">*</span>
               </span>
@@ -134,25 +156,37 @@
 
             <label>
               <span class="label-line">
-                Age (days) <span class="required-asterisk">*</span>
+                Age at Testing (days) <span class="required-asterisk">*</span>
               </span>
               <input type="number" min="1" id="ageDays" />
             </label>
 
             <label>
               <span class="label-line">
-                Number of Cubes to be Crushed<span class="required-asterisk">*</span>
+                Number of Cubes Submitted <span class="required-asterisk">*</span>
               </span>
               <input type="number" min="1" id="cubesCount" />
             </label>
-          </div>
 
-          <label class="full">
-            <span class="label-line">
-              General Notes <span class="required-asterisk">*</span>
-            </span>
-            <textarea id="notes" rows="3"></textarea>
-          </label>
+            <label>
+              <span class="label-line">
+                Target Compressive Strength (MPa)
+                <span class="required-asterisk">*</span>
+              </span>
+              <input type="number" min="0" step="0.1" id="targetStrength" />
+            </label>
+
+            <label>
+              <span class="label-line">
+                General Notes / Site Information <span class="required-asterisk">*</span>
+              </span>
+              <textarea
+                id="notes"
+                rows="3"
+                placeholder="E.g. Grade of Concrete"
+              ></textarea>
+            </label>
+          </div>
 
           <!-- MIX INPUT MODE -->
           <h4 class="section-title">Mix Input Mode</h4>
@@ -212,22 +246,12 @@
                 <input type="number" min="0" step="0.1" id="coarseAgg" />
               </label>
             </div>
-
-            <div id="wcratio-box" class="wc-box">
-              <strong>Water–Cement Ratio (from kg/m³):</strong>
-              <span id="wcRatioValue">0.00</span>
-            </div>
-
-            <div id="mixratio-box" class="wc-box">
-              <strong>Normalized Mix Ratio (by cement, from kg/m³):</strong>
-              <span id="mixRatioValue">–</span>
-            </div>
           </div>
 
           <!-- MATERIAL QUANTITIES (RATIOS) -->
-          <h4 id="ratioHeading" class="section-title">Material Quantities – Ratios(by Cement)</h4>
+          <h4 id="ratioHeading" class="section-title">Material Quantities – Ratios (by Cement)</h4>
 
-          <div id="ratioInputs" style="display:none;">
+          <div id="ratioInputs" style="display: none;">
             <div class="grid two">
               <label>
                 <span class="label-line">
@@ -266,9 +290,19 @@
             </div>
           </div>
 
+          <!-- W/C & MIX RATIO -->
+          <div id="wcratio-box" class="wc-box" style="display:none;">
+              <strong>Water–Cement Ratio (from kg/m³):</strong>
+              <span id="wcRatioValue">0.00</span>
+          </div>
+
+          <div id="mixratio-box" class="wc-box" style="display:none;">
+              <strong>Normalized Mix Ratio (by cement, from kg/m³):</strong>
+              <span id="mixRatioValue">–</span>
+          </div>
+
           <!-- CHEMICAL ADMIXTURES -->
           <h4 class="section-title">Chemical Admixtures</h4>
-          <p class="subtle">If none, you may enter one row and type “Nil”.</p>
 
           <div id="admixtures-container" class="dynamic-group"></div>
 
@@ -278,7 +312,6 @@
 
           <!-- PARTIAL CEMENT REPLACEMENTS -->
           <h4 class="section-title">Partial Cement Replacements (SCMs)</h4>
-          <p class="subtle">If none, you may enter one row and type “Nil”.</p>
 
           <div id="scms-container" class="dynamic-group"></div>
 
@@ -296,13 +329,15 @@
             </button>
           </div>
 
-          <p id="status-line" class="status-pill"></p>
+          <div id="form-error-summary" class="error-summary"></div>
+
+          <p id="status-line" class="status-pill" style="display: none;"></p>
         </form>
       </section>
 
       <!-- SAVED MIXES TABLE -->
       <section class="card">
-        <h3>Saved Mixes (Local Only)</h3>
+        <h3>Saved Client Mixes</h3>
 
         <div class="table-actions">
           <button id="export-csv-btn" class="btn-primary small">Export CSV</button>
@@ -315,7 +350,7 @@
               <tr>
                 <th>App No</th>
                 <th>Mode</th>
-                <th>Student</th>
+                <th>Client / Company</th>
                 <th>Type</th>
                 <th>W/C</th>
                 <th>Saved</th>
@@ -326,19 +361,29 @@
             </tbody>
           </table>
         </div>
-        <p class="subtle small-note">Click a row to load that mix back into the form.</p>
+        <p class="subtle small-note">
+          Click a row to load that mix back into the form.
+        </p>
       </section>
     </div>
 
     <!-- APPLICATION NUMBER MODAL -->
-    <div id="appModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div
+      id="appModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
       <div class="modal-card research">
         <div class="modal-header">
           <h4 id="modalTitle">Application Number</h4>
-          <button id="modalClose" type="button" class="modal-x" aria-label="Close dialog">×</button>
+          <button id="modalClose" type="button" class="modal-x" aria-label="Close dialog">
+            ×
+          </button>
         </div>
         <div class="modal-body">
-          <div class="modal-number" id="modalNumber">UNILAG-CR-K000001</div>
+          <div class="modal-number" id="modalNumber">UNILAG-CL-K000001</div>
           <div class="modal-note">
             Please keep this number safe and quote it in all discussions with the Concrete Laboratory.
           </div>
@@ -352,8 +397,4 @@
     </footer>
   </main>
 </body>
-
 </html>
-
-
-
