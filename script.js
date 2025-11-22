@@ -442,7 +442,7 @@ const loadRecordIntoForm = (r) => {
   const simpleFields = [
     ["studentName", "studentName"],
     ["matricNumber", "matricNumber"],
-    ["programme", "programme"],          // ← we'll special–case this below
+    ["programme", "programme"],
     ["supervisorName", "supervisorName"],
     ["studentPhone", "studentPhone"],
     ["thesisTitle", "thesisTitle"],
@@ -934,4 +934,5 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSavedRecords();
 
 });
+
 
