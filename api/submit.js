@@ -44,11 +44,11 @@ const missingField = (body, list) => {
 };
 
 const nextRecordId = (lastId, modeLetter) => {
-  if (!lastId) return `UNILAG-CL-${modeLetter}000001`;
-  const m = lastId.match(/^UNILAG-CL-[KR](\d{6})$/);
-  if (!m) return `UNILAG-CL-${modeLetter}000001`;
+  if (!lastId) return `UNILAG-CR-${modeLetter}000001`;
+  const m = lastId.match(/^UNILAG-CR-[KR](\d{6})$/);
+  if (!m) return `UNILAG-CR-${modeLetter}000001`;
   const num = (parseInt(m[1]) + 1).toString().padStart(6, "0");
-  return `UNILAG-CL-${modeLetter}${num}`;
+  return `UNILAG-CR-${modeLetter}${num}`;
 };
 
 const kgRatioCalc = (c, w, f, m, co) => {
@@ -333,4 +333,5 @@ export default async function handler(req, res) {
     mixRatioString,
     wcRatio,
   });
+
 }
