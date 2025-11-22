@@ -436,11 +436,13 @@ const renderSavedRecords = () => {
 
 /* ---------- Load record into form ---------- */
 
+/* ---------- Load record into form ---------- */
+
 const loadRecordIntoForm = (r) => {
   const simpleFields = [
     ["studentName", "studentName"],
     ["matricNumber", "matricNumber"],
-    ["programme", "programme"],
+    ["programme", "programme"],          // ← we'll special–case this below
     ["supervisorName", "supervisorName"],
     ["studentPhone", "studentPhone"],
     ["thesisTitle", "thesisTitle"],
@@ -454,7 +456,14 @@ const loadRecordIntoForm = (r) => {
 
   simpleFields.forEach(([id, key]) => {
     const el = $(id);
-    if (el) el.value = r[key] ?? "";
+    if (!el) return;
+
+    // handle legacy records that still used "organisationType"
+    if (id === "programme") {
+      el.value = r.programme ?? r.organisationType ?? "";
+    } else {
+      el.value = r[key] ?? "";
+    }
   });
 
   // Concrete type
@@ -473,7 +482,9 @@ const loadRecordIntoForm = (r) => {
     if (!matched) {
       cSel.value = saved ? "Other" : "";
       if (cOther) cOther.value = saved || "";
-    } else if (cOther) cOther.value = "";
+    } else if (cOther) {
+      cOther.value = "";
+    }
   }
 
   // Cement type
@@ -492,7 +503,9 @@ const loadRecordIntoForm = (r) => {
     if (!matched) {
       ctSel.value = saved ? "Other" : "";
       if (ctOther) ctOther.value = saved || "";
-    } else if (ctOther) ctOther.value = "";
+    } else if (ctOther) {
+      ctOther.value = "";
+    }
   }
 
   // Mode
@@ -921,3 +934,4 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSavedRecords();
 
 });
+
