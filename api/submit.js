@@ -1,169 +1,135 @@
 import { google } from "googleapis";
 
-/* ---------------------------------------------------------------
-   GENERATE NEXT APPLICATION NUMBER
----------------------------------------------------------------- */
-function nextRecordId(lastId, modeLetter) {
-  if (!lastId) return `UNILAG-CR-${modeLetter}000001`;
+/* ---------------------- HELPERS ---------------------- */
 
-  const match = lastId.match(/^UNILAG-CR-[KR](\d{6})$/);
-  if (!match) return `UNILAG-CR-${modeLetter}000001`;
+const REQUIRED_COMMON = [
+  "studentName",
+  "matricNumber",
+  "studentPhone",
+  "programme",
+  "supervisorName",
+  "thesisTitle",
+  "crushDate",
+  "concreteType",
+  "cementType",
+  "slump",
+  "ageDays",
+  "cubesCount",
+  "targetStrength",
+  "notes",
+];
 
-  let number = parseInt(match[1], 10) + 1;
-  if (number > 999999) {
-    number = 1;
+const REQUIRED_KG = [
+  "cementContent",
+  "waterContent",
+  "fineAgg",
+  "mediumAgg",
+  "coarseAgg",
+];
+
+const REQUIRED_RATIO = [
+  "ratioCement",
+  "ratioFine",
+  "ratioMedium",
+  "ratioCoarse",
+  "ratioWater",
+];
+
+const missingField = (body, list) => {
+  for (const key of list) {
+    const v = body[key];
+    if (v === undefined || v === null || String(v).trim() === "") return key;
   }
+  return null;
+};
 
-  return `UNILAG-CR-${modeLetter}${String(number).padStart(6, "0")}`;
-}
+const nextRecordId = (lastId, modeLetter) => {
+  if (!lastId) return `UNILAG-CL-${modeLetter}000001`;
+  const m = lastId.match(/^UNILAG-CL-[KR](\d{6})$/);
+  if (!m) return `UNILAG-CL-${modeLetter}000001`;
+  const num = (parseInt(m[1]) + 1).toString().padStart(6, "0");
+  return `UNILAG-CL-${modeLetter}${num}`;
+};
 
-function computeKgMixRatio(cementContent, waterContent, fineAgg, mediumAgg, coarseAgg) {
-  const cement = Number(cementContent);
-  const water = Number(waterContent);
-  const fine = Number(fineAgg);
-  const medium = Number(mediumAgg);
-  const coarse = Number(coarseAgg);
+const kgRatioCalc = (c, w, f, m, co) => {
+  c = Number(c);
+  w = Number(w);
+  f = Number(f);
+  m = Number(m);
+  co = Number(co);
 
-  if (!cement || cement <= 0 || [water, fine, medium, coarse].some(v => isNaN(v))) {
-    return "";
-  }
+  if (!c || c <= 0 || [w, f, m, co].some((x) => isNaN(x)))
+    return { wcRatio: 0, mixRatioString: "" };
 
-  const fineRatio = fine / cement;
-  const mediumRatio = medium / cement;
-  const coarseRatio = coarse / cement;
-  const waterRatio = water / cement;
+  const r = (x) => (x / c).toFixed(2);
+  return {
+    wcRatio: w / c,
+    mixRatioString: `1 : ${r(f)} : ${r(m)} : ${r(co)} : ${r(w)}`,
+  };
+};
 
-  return `1 : ${fineRatio.toFixed(2)} : ${mediumRatio.toFixed(2)} : ${coarseRatio.toFixed(
-    2
-  )} : ${waterRatio.toFixed(2)}`;
-}
+const ratioCalc = (c, f, m, co, w) => {
+  c = Number(c);
+  f = Number(f);
+  m = Number(m);
+  co = Number(co);
+  w = Number(w);
 
-function computeRatioMix(ratioCement, ratioFine, ratioMedium, ratioCoarse, ratioWater) {
-  const c = Number(ratioCement);
-  const f = Number(ratioFine);
-  const m = Number(ratioMedium);
-  const co = Number(ratioCoarse);
-  const w = Number(ratioWater);
+  if (!c || c <= 0 || [f, m, co, w].some((x) => isNaN(x)))
+    return { wcRatio: 0, mixRatioString: "" };
 
-  if (!c || c <= 0 || [f, m, co, w].some(v => isNaN(v))) {
-    return { mixRatioString: "", wcRatio: 0 };
-  }
+  const r = (x) => (x / c).toFixed(2);
+  return {
+    wcRatio: w / c,
+    mixRatioString: `1 : ${r(f)} : ${r(m)} : ${r(co)} : ${r(w)}`,
+  };
+};
 
-  const fineN = f / c;
-  const mediumN = m / c;
-  const coarseN = co / c;
-  const waterN = w / c;
-  const wcRatio = w / c;
+/* ---------------------- MAIN HANDLER ---------------------- */
 
-  const mixRatioString = `1 : ${fineN.toFixed(2)} : ${mediumN.toFixed(2)} : ${coarseN.toFixed(
-    2
-  )} : ${waterN.toFixed(2)}`;
-
-  return { mixRatioString, wcRatio };
-}
-
-/* ---------------------------------------------------------------
-   MAIN HANDLER
----------------------------------------------------------------- */
 export default async function handler(req, res) {
+  /* ---------- METHOD CHECK ---------- */
   if (req.method !== "POST") {
-    return res
-      .status(405)
-      .json({ success: false, message: "Method not allowed" });
+    return res.status(405).json({ success: false, message: "Method not allowed" });
   }
 
-  const body = req.body;
-  const inputMode = body.inputMode;
+  const body = req.body || {};
+  const mode = body.inputMode;
 
-  if (inputMode !== "kg" && inputMode !== "ratio") {
+  if (!["kg", "ratio"].includes(mode)) {
+    return res.status(400).json({ success: false, message: "Invalid input mode" });
+  }
+
+  /* ---------- REQUIRED FIELDS CHECK ---------- */
+  let missing = missingField(body, REQUIRED_COMMON);
+  if (!missing) {
+    missing =
+      mode === "kg"
+        ? missingField(body, REQUIRED_KG)
+        : missingField(body, REQUIRED_RATIO);
+  }
+  if (missing) {
     return res.status(400).json({
       success: false,
-      message: "Invalid input mode"
+      message: `Missing required field: ${missing}`,
     });
   }
 
-  const commonRequired = [
-    "studentName",
-    "matricNo",
-    "institution",
-    "supervisor",
-    "projectTitle",
-    "crushDate",
-    "concreteType",
-    "cementType",
-    "slump",
-    "ageDays",
-    "cubesCount",
-    "notes"
-  ];
-
-  for (const key of commonRequired) {
-    if (
-      body[key] === undefined ||
-      body[key] === null ||
-      String(body[key]).trim() === ""
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: `Missing required field: ${key}`
-      });
-    }
-  }
-
-  if (inputMode === "kg") {
-    const kgRequired = [
-      "cementContent",
-      "waterContent",
-      "fineAgg",
-      "mediumAgg",
-      "coarseAgg"
-    ];
-    for (const key of kgRequired) {
-      if (
-        body[key] === undefined ||
-        body[key] === null ||
-        String(body[key]).trim() === ""
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: `Missing required field (kg/m3 mode): ${key}`
-        });
-      }
-    }
-  } else {
-    const ratioRequired = [
-      "ratioCement",
-      "ratioFine",
-      "ratioMedium",
-      "ratioCoarse",
-      "ratioWater"
-    ];
-    for (const key of ratioRequired) {
-      if (
-        body[key] === undefined ||
-        body[key] === null ||
-        String(body[key]).trim() === ""
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: `Missing required field (ratio mode): ${key}`
-        });
-      }
-    }
-  }
-
+  /* ---------- DESTRUCTURE ---------- */
   const {
     studentName,
-    matricNo,
-    institution,
-    supervisor,
-    projectTitle,
+    matricNumber,
+    studentPhone,
+    programme,
+    supervisorName,
+    thesisTitle,
     crushDate,
     concreteType,
     cementType,
     slump,
     ageDays,
     cubesCount,
+    targetStrength,
     notes,
     cementContent,
     waterContent,
@@ -175,235 +141,196 @@ export default async function handler(req, res) {
     ratioMedium,
     ratioCoarse,
     ratioWater,
-    admixtures = [],
-    scms = []
+    admixtures,
+    scms,
   } = body;
 
+  /* ---------- ENVIRONMENT VARIABLES ---------- */
   const sheetId = process.env.SHEET_ID;
-  const credentials = process.env.GOOGLE_SERVICE_CREDENTIALS;
-
-  if (!sheetId || !credentials) {
+  const creds = process.env.GOOGLE_SERVICE_CREDENTIALS;
+  if (!sheetId || !creds) {
     return res.status(500).json({
       success: false,
-      message: "Server not configured (missing credentials)"
+      message: "Server misconfigured: Missing sheet or credentials",
     });
   }
 
   const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(credentials),
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials: JSON.parse(creds),
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
-
   const sheets = google.sheets({ version: "v4", auth });
 
-  const modeLetter = inputMode === "kg" ? "K" : "R";
-  const mainSheetName = inputMode === "kg" ? "Research Sheet (Kg/m3)" : "Research Sheet (Ratios)";
+  const modeLetter = mode === "kg" ? "K" : "R";
+  const mainSheet =
+    mode === "kg" ? "Research Sheet (Kg/m3)" : "Research Sheet (Ratios)";
 
-  /* -----------------------------------------------------------
-     FETCH LAST APPLICATION NUMBER
-  ------------------------------------------------------------ */
+  /* ---------- FIND LAST RECORD ID ---------- */
   let lastId = null;
-
   try {
-    const existing = await sheets.spreadsheets.values.get({
+    const r = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${mainSheetName}!A:A`
+      range: `${mainSheet}!A:A`,
     });
-
-    const rows = existing.data.values || [];
+    const rows = r.data.values || [];
     for (let i = rows.length - 1; i >= 0; i--) {
-      if (rows[i][0] && rows[i][0].trim()) {
-        lastId = rows[i][0].trim();
+      const cell = rows[i][0];
+      if (cell && typeof cell === "string" && cell.trim()) {
+        lastId = cell.trim();
         break;
       }
     }
   } catch (err) {
-    console.error("Error reading last recordId:", err);
+    console.error("Error reading last recordID:", err);
     return res.status(500).json({
       success: false,
-      message: "Failed to read existing records"
+      message: "Failed to read existing records",
     });
   }
 
   const recordId = nextRecordId(lastId, modeLetter);
   const timestamp = new Date().toISOString();
 
-  let wcRatioNumber = 0;
+  /* ---------- COMPUTE RATIOS ---------- */
+  let wcRatio = 0;
   let mixRatioString = "";
-
-  if (inputMode === "kg") {
-    const cementNum = Number(cementContent);
-    const waterNum = Number(waterContent);
-    if (cementNum && cementNum > 0 && !isNaN(waterNum)) {
-      wcRatioNumber = waterNum / cementNum;
-    } else {
-      wcRatioNumber = 0;
-    }
-    mixRatioString = computeKgMixRatio(
+  if (mode === "kg") {
+    ({ wcRatio, mixRatioString } = kgRatioCalc(
       cementContent,
       waterContent,
       fineAgg,
       mediumAgg,
       coarseAgg
-    );
+    ));
   } else {
-    const result = computeRatioMix(
+    ({ wcRatio, mixRatioString } = ratioCalc(
       ratioCement,
       ratioFine,
       ratioMedium,
       ratioCoarse,
       ratioWater
-    );
-    wcRatioNumber = result.wcRatio;
-    mixRatioString = result.mixRatioString;
+    ));
   }
 
-  /* -----------------------------------------------------------
-     ROW FORMAT FOR GOOGLE SHEETS (KG/M3 OR RATIOS)
-  ------------------------------------------------------------ */
-  let mainRow;
+  /* ---------- BUILD MAIN ROW ---------- */
+  const commonCols = [
+    recordId,
+    timestamp,
+    studentName,
+    matricNumber,
+    studentPhone,
+    programme,
+    supervisorName,
+    thesisTitle,
+    crushDate,
+    concreteType,
+    cementType,
+    slump,
+    ageDays,
+    cubesCount,
+    targetStrength,
+  ];
 
-  if (inputMode === "kg") {
-    mainRow = [
-      [
-        recordId,
-        timestamp,
-        studentName,
-        matricNo,
-        institution,
-        supervisor,
-        projectTitle,
-        ageDays,
-        cubesCount,
-        crushDate,
-        concreteType,
-        cementType,
-        slump,
-        cementContent,
-        waterContent,
-        wcRatioNumber,
-        mixRatioString,
-        fineAgg,
-        mediumAgg,
-        coarseAgg,
-        notes
-      ]
-    ];
-  } else {
-    mainRow = [
-      [
-        recordId,
-        timestamp,
-        studentName,
-        matricNo,
-        institution,
-        supervisor,
-        projectTitle,
-        ageDays,
-        cubesCount,
-        crushDate,
-        concreteType,
-        cementType,
-        slump,
-        ratioCement,
-        ratioFine,
-        ratioMedium,
-        ratioCoarse,
-        ratioWater,
-        wcRatioNumber,
-        mixRatioString,
-        notes
-      ]
-    ];
-  }
+  const mixColsKg = [
+    cementContent,
+    waterContent,
+    fineAgg,
+    mediumAgg,
+    coarseAgg,
+    wcRatio,
+    mixRatioString,
+    notes,
+  ];
 
-  /* -----------------------------------------------------------
-     APPEND ROW TO MAIN GOOGLE SHEET
-  ------------------------------------------------------------ */
+  const mixColsRatio = [
+    ratioCement,
+    ratioFine,
+    ratioMedium,
+    ratioCoarse,
+    ratioWater,
+    wcRatio,
+    mixRatioString,
+    notes,
+  ];
+
+  const mainRow = [
+    [...commonCols, ...(mode === "kg" ? mixColsKg : mixColsRatio)],
+  ];
+
+  /* ---------- SAVE MAIN ROW ---------- */
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: `${mainSheetName}!A:U`,
+      range: `${mainSheet}!A:W`,
       valueInputOption: "USER_ENTERED",
-      requestBody: { values: mainRow }
+      requestBody: { values: mainRow },
     });
   } catch (err) {
-    console.error("Error appending main row:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to save main record"
-    });
+    console.error("Error saving main row:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to save main record" });
   }
 
-  /* -----------------------------------------------------------
-     APPEND ROWS TO RESEARCH ADMIXTURES
-  ------------------------------------------------------------ */
-  if (Array.isArray(admixtures) && admixtures.length > 0) {
-    const admRows = admixtures.map((a, index) => [
+  /* ---------- SAVE ADMIXTURES ---------- */
+  if (Array.isArray(admixtures) && admixtures.length) {
+    const rows = admixtures.map((a, i) => [
       recordId,
       timestamp,
-      inputMode,
       studentName,
-      index + 1,
+      matricNumber,
+      i + 1,
       a.name || "",
-      a.type || "",
-      a.dosage || ""
+      a.dosage || "",
     ]);
 
     try {
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: "Research Admixtures!A:H",
+        range: "Research Admixtures!A:G",
         valueInputOption: "USER_ENTERED",
-        requestBody: { values: admRows }
+        requestBody: { values: rows },
       });
     } catch (err) {
-      console.error("Error appending admixtures rows:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to save admixtures"
-      });
+      console.error("Error saving admixtures:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to save admixtures" });
     }
   }
 
-  /* -----------------------------------------------------------
-     APPEND ROWS TO RESEARCH SCMS
-  ------------------------------------------------------------ */
-  if (Array.isArray(scms) && scms.length > 0) {
-    const scmRows = scms.map((s, index) => [
+  /* ---------- SAVE SCMs ---------- */
+  if (Array.isArray(scms) && scms.length) {
+    const rows = scms.map((s, i) => [
       recordId,
       timestamp,
-      inputMode,
       studentName,
-      index + 1,
+      matricNumber,
+      i + 1,
       s.name || "",
       s.percent || "",
-      s.quantity || ""
     ]);
 
     try {
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: "Research SCMs!A:H",
+        range: "Research SCMs!A:G",
         valueInputOption: "USER_ENTERED",
-        requestBody: { values: scmRows }
+        requestBody: { values: rows },
       });
     } catch (err) {
-      console.error("Error appending SCM rows:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to save SCMs"
-      });
+      console.error("Error saving SCMs:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to save SCMs" });
     }
   }
 
-  /* -----------------------------------------------------------
-     RETURN SUCCESS
-  ------------------------------------------------------------ */
+  /* ---------- DONE ---------- */
   return res.status(200).json({
     success: true,
     recordId,
     mixRatioString,
-    wcRatio: wcRatioNumber
+    wcRatio,
   });
 }
