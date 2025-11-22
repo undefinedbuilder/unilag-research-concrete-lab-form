@@ -10,7 +10,7 @@ This project provides a comprehensive **end-to-end intake system** for student a
    - Captures student details, supervisor, thesis title, mix overview, and cube testing parameters.
    - Supports **chemical admixtures** and **partial cement replacements (SCMs)** as dynamic rows.
 
-3. **Front-end script**
+2. **Front-end script**
    - Validates all required fields (student info, mix details, kg/ratio inputs, and any partially filled admixture/SCM rows). 
    - Supports **two input modes**:  
      - **Kg/m³ mode** – Cement, water, fine/medium/coarse aggregates as absolute quantities.
@@ -28,7 +28,7 @@ This project provides a comprehensive **end-to-end intake system** for student a
    - Receives a unique **Application Number** and shows it in a modal dialog (Application Number card).
    - Generates a **one-page PDF** with the UNILAG logo and all submitted data (research-specific layout). 
 
-4. **Server function** (`submit.js`):
+3. **Server function** (`submit.js`):
    - Accepts only `POST` requests and rejects all other methods with `405`.  
    - Validates `inputMode` (must be `"kg"` or `"ratio"`).
    - Checks for missing required fields using three lists:  
@@ -53,7 +53,7 @@ This project provides a comprehensive **end-to-end intake system** for student a
        "mixRatioString": "1 : ...",
        "wcRatio": 0.45
      }
-5. **Dependencies** (`package.json`)  
+4. **Dependencies** (`package.json`)  
    - Uses the **Google Sheets API** via the official `googleapis` client.
 
 ---
@@ -153,3 +153,4 @@ To make it easy for students and lab staff to manage multiple mixes **before** o
 - **University of Lagos** – Department of Civil & Environmental Engineering  
 - **jsPDF** – for client-side PDF generation of the Research Mix Cube Test Intake Form.
 - **Google Sheets API (`googleapis`)** – for secure cloud data storage of research mixes, admixtures, and SCMs.
+
