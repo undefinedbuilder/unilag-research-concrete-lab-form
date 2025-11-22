@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UNILAG Concrete Lab – External Client Cube Test Form</title>
+  <title>UNILAG Concrete Lab – Research Mix Intake Form</title>
 
   <link rel="stylesheet" href="style.css" />
   <!-- jsPDF for PDF generation -->
@@ -26,7 +25,7 @@
       </div>
 
       <p class="notice">
-        <strong>NOTE:</strong> For external clients and commercial cube tests. Enter 0 for any
+        <strong>NOTE:</strong> For student and research cube tests. Enter 0 for any
         component that is not used.
       </p>
     </header>
@@ -35,60 +34,60 @@
     <div class="main-grid">
       <!-- FORM -->
       <section class="card">
-        <h3>External Client Cube Test Form</h3>
+        <h3>Research Mix Intake Form</h3>
 
         <form id="mix-form">
-          <!-- CLIENT AND PROJECT DETAILS -->
-          <h4 class="section-title">Client &amp; Project Details</h4>
+          <!-- STUDENT & RESEARCH DETAILS -->
+          <h4 class="section-title">Student &amp; Research Details</h4>
 
           <div class="grid two">
             <label>
               <span class="label-line">
-                Company / Client Name <span class="required-asterisk">*</span>
+                Student Name <span class="required-asterisk">*</span>
               </span>
-              <input type="text" id="clientName" />
+              <input type="text" id="studentName" />
             </label>
 
             <label>
               <span class="label-line">
-                Contact Email <span class="required-asterisk">*</span>
+                Matric Number <span class="required-asterisk">*</span>
               </span>
-              <input type="email" id="contactEmail" />
+              <input type="text" id="matricNumber" />
             </label>
 
             <label>
               <span class="label-line">
-                Organisation Type <span class="required-asterisk">*</span>
+                Phone Number <span class="required-asterisk">*</span>
+              </span>
+              <input type="tel" id="studentPhone" />
+            </label>
+
+            <label>
+              <span class="label-line">
+                Programme <span class="required-asterisk">*</span>
               </span>
               <input
                 type="text"
-                id="organisationType"
-                placeholder="e.g., Construction Company, Consulting Firm"
+                id="programme"
+                placeholder="e.g., Civil Engineering"
               />
             </label>
 
             <label>
               <span class="label-line">
-                Contact Person <span class="required-asterisk">*</span>
+                Supervisor's Name <span class="required-asterisk">*</span>
               </span>
-              <input type="text" id="contactPerson" />
+              <input type="text" id="supervisorName" />
             </label>
 
-            <label>
+            <label class="full-width">
               <span class="label-line">
-                Contact Phone Number <span class="required-asterisk">*</span>
-              </span>
-              <input type="tel" id="phoneNumber" />
-            </label>
-
-            <label>
-              <span class="label-line">
-                Project / Site <span class="required-asterisk">*</span>
+                Project / Thesis Title <span class="required-asterisk">*</span>
               </span>
               <input
                 type="text"
-                id="projectSite"
-                placeholder="e.g., Lekki Phase 1"
+                id="thesisTitle"
+                placeholder="e.g., Effect of SCMs on Compressive Strength"
               />
             </label>
           </div>
@@ -178,12 +177,12 @@
 
             <label>
               <span class="label-line">
-                General Notes / Site Information <span class="required-asterisk">*</span>
+                General Notes <span class="required-asterisk">*</span>
               </span>
               <textarea
                 id="notes"
                 rows="3"
-                placeholder="E.g. Grade of Concrete"
+                placeholder="e.g. Grade"
               ></textarea>
             </label>
           </div>
@@ -337,7 +336,7 @@
 
       <!-- SAVED MIXES TABLE -->
       <section class="card">
-        <h3>Saved Client Mixes</h3>
+        <h3>Saved Research Mixes</h3>
 
         <div class="table-actions">
           <button id="export-csv-btn" class="btn-primary small">Export CSV</button>
@@ -350,7 +349,7 @@
               <tr>
                 <th>App No</th>
                 <th>Mode</th>
-                <th>Client / Company</th>
+                <th>Student / Researcher</th>
                 <th>Type</th>
                 <th>W/C</th>
                 <th>Saved</th>

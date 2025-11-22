@@ -1,69 +1,57 @@
 /* -----------------------------------------------------------
-   UNILAG CONCRETE LAB – CLIENT FORM FRONT-END
+   UNILAG CONCRETE LAB – RESEARCH MIX FRONT-END
 ----------------------------------------------------------- */
 
-const STORAGE_KEY = "unilag-concrete-lab-client-mixes";
+const STORAGE_KEY = "unilag-concrete-lab-research-mixes";
 let logoImageDataUrl = null;
 
-/* ---------- Helpers ---------- */
+/* ---------- Small helpers ---------- */
 
-function loadImageAsDataURL(path) {
-  return fetch(path)
-    .then((resp) => resp.blob())
-    .then(
-      (blob) =>
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        })
-    )
-    .catch(() => null);
-}
+const $ = (id) => document.getElementById(id);
 
-function sanitizeFilename(name) {
-  return String(name)
-    .replace(/[\\/:*?"<>|]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function setDateToToday(inputEl) {
+const setToday = (inputEl) => {
   if (!inputEl) return;
   const tzOffset = new Date().getTimezoneOffset() * 60000;
-  const todayLocal = new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
-  inputEl.value = todayLocal;
-}
+  inputEl.value = new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
+};
 
-function setStatusLine(message, type = "info") {
-  const el = document.getElementById("status-line");
+const sanitizeFilename = (name) =>
+  String(name).replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
+
+const setStatusLine = (msg, type = "info") => {
+  const el = $("status-line");
   if (!el) return;
-
-  if (!message) {
+  if (!msg) {
     el.style.display = "none";
     return;
   }
-
   el.style.display = "inline-flex";
-  el.textContent = message;
-  el.classList.remove("status-success", "status-error", "status-info");
+  el.textContent = msg;
+  el.className = `status-pill status-${type}`;
+};
 
-  if (type === "success") el.classList.add("status-success");
-  else if (type === "error") el.classList.add("status-error");
-  else el.classList.add("status-info");
-}
+const getInputMode = () =>
+  (document.querySelector('input[name="inputMode"]:checked') || {}).value ||
+  "kg";
 
-function getInputMode() {
-  const checked = document.querySelector('input[name="inputMode"]:checked');
-  return checked ? checked.value : "kg";
-}
+const loadImageAsDataURL = (path) =>
+  fetch(path)
+    .then((r) => r.blob())
+    .then(
+      (b) =>
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(b);
+        })
+    )
+    .catch(() => null);
 
-/* ---------- Admixtures & SCM Dynamic Rows ---------- */
+/* ---------- Dynamic rows ---------- */
 
-function createAdmixtureRow(data = {}) {
+const createAdmixtureRow = (data = {}) => {
   const row = document.createElement("div");
   row.className = "dynamic-row";
-
   row.innerHTML = `
     <label>
       <span class="label-line">
@@ -71,25 +59,21 @@ function createAdmixtureRow(data = {}) {
       </span>
       <input type="text" name="adm_name" value="${data.name || ""}">
     </label>
-
     <label>
       <span class="label-line">
         Dosage (L/100kg of Cement) <span class="required-asterisk">*</span>
       </span>
       <input type="text" name="adm_dosage" value="${data.dosage || ""}">
     </label>
-
     <button type="button" class="remove-row-btn">×</button>
   `;
-
   row.querySelector(".remove-row-btn").onclick = () => row.remove();
   return row;
-}
+};
 
-function createScmRow(data = {}) {
+const createScmRow = (data = {}) => {
   const row = document.createElement("div");
   row.className = "dynamic-row";
-
   row.innerHTML = `
     <label>
       <span class="label-line">
@@ -97,145 +81,130 @@ function createScmRow(data = {}) {
       </span>
       <input type="text" name="scm_name" value="${data.name || ""}">
     </label>
-
     <label>
       <span class="label-line">
         Percent (%) <span class="required-asterisk">*</span>
       </span>
       <input type="text" name="scm_percent" value="${data.percent || ""}">
     </label>
-
     <button type="button" class="remove-row-btn">×</button>
   `;
-
   row.querySelector(".remove-row-btn").onclick = () => row.remove();
   return row;
-}
+};
 
-/* ---------- W/C Ratio + Mix Ratio ---------- */
-// Show/hide the W/C + Mix ratio boxes
-function toggleRatioBoxes(show) {
-  const wcBox = document.getElementById("wcratio-box");
-  const mixBox = document.getElementById("mixratio-box");
+/* ---------- W/C + Mix ratio ---------- */
 
-  if (!wcBox || !mixBox) return;
+const toggleRatioBoxes = (show) => {
+  const wc = $("wcratio-box");
+  const mix = $("mixratio-box");
+  if (!wc || !mix) return;
+  wc.style.display = mix.style.display = show ? "" : "none";
+};
 
-  wcBox.style.display = show ? "" : "none";
-  mixBox.style.display = show ? "" : "none";
-}
+const updateWCRatioFromKg = () => {
+  const cement = parseFloat($("cementContent").value);
+  const water = parseFloat($("waterContent").value);
+  const fine = parseFloat($("fineAgg").value);
+  const medium = parseFloat($("mediumAgg").value);
+  const coarse = parseFloat($("coarseAgg").value);
 
-function updateWCRatioFromKg() {
-  const cement = parseFloat(document.getElementById("cementContent").value);
-  const water = parseFloat(document.getElementById("waterContent").value);
-  const fine = parseFloat(document.getElementById("fineAgg").value);
-  const medium = parseFloat(document.getElementById("mediumAgg").value);
-  const coarse = parseFloat(document.getElementById("coarseAgg").value);
-
-  // If ANY are missing → hide boxes
-  if ([cement, water, fine, medium, coarse].some(v => isNaN(v) || v === "")) {
+  if ([cement, water, fine, medium, coarse].some((v) => isNaN(v))) {
     toggleRatioBoxes(false);
     return 0;
   }
 
-  // All filled → compute + show boxes
   const ratio = water / cement;
-  document.getElementById("wcRatioValue").textContent = ratio.toFixed(2);
+  $("wcRatioValue").textContent = ratio.toFixed(2);
   toggleRatioBoxes(true);
-
   return ratio;
-}
+};
 
-function updateMixRatioFromKg() {
-  const cement = parseFloat(document.getElementById("cementContent").value);
-  const fine = parseFloat(document.getElementById("fineAgg").value);
-  const medium = parseFloat(document.getElementById("mediumAgg").value);
-  const coarse = parseFloat(document.getElementById("coarseAgg").value);
-  const water = parseFloat(document.getElementById("waterContent").value);
+const updateMixRatioFromKg = () => {
+  const cement = parseFloat($("cementContent").value);
+  const fine = parseFloat($("fineAgg").value);
+  const medium = parseFloat($("mediumAgg").value);
+  const coarse = parseFloat($("coarseAgg").value);
+  const water = parseFloat($("waterContent").value);
 
-  if ([cement, fine, medium, coarse, water].some(v => isNaN(v) || v === "")) {
+  if ([cement, fine, medium, coarse, water].some((v) => isNaN(v))) {
     toggleRatioBoxes(false);
     return "";
   }
 
-  const mix = `1 : ${(fine / cement).toFixed(2)} : ${(medium / cement).toFixed(2)} : ${(coarse / cement).toFixed(2)} : ${(water / cement).toFixed(2)}`;
-  document.getElementById("mixRatioValue").textContent = mix;
+  const mix = `1 : ${(fine / cement).toFixed(2)} : ${(medium / cement).toFixed(
+    2
+  )} : ${(coarse / cement).toFixed(2)} : ${(water / cement).toFixed(2)}`;
+  $("mixRatioValue").textContent = mix;
   toggleRatioBoxes(true);
   return mix;
-}
+};
 
-function updateWcAndMixFromRatio() {
-  const c = parseFloat(document.getElementById("ratioCement").value);
-  const f = parseFloat(document.getElementById("ratioFine").value);
-  const m = parseFloat(document.getElementById("ratioMedium").value);
-  const co = parseFloat(document.getElementById("ratioCoarse").value);
-  const w = parseFloat(document.getElementById("ratioWater").value);
+const updateWcAndMixFromRatio = () => {
+  const c = parseFloat($("ratioCement").value);
+  const f = parseFloat($("ratioFine").value);
+  const m = parseFloat($("ratioMedium").value);
+  const co = parseFloat($("ratioCoarse").value);
+  const w = parseFloat($("ratioWater").value);
 
-  if ([c, f, m, co, w].some(v => isNaN(v) || v === "")) {
+  if ([c, f, m, co, w].some((v) => isNaN(v))) {
     toggleRatioBoxes(false);
     return { wcRatio: 0, mixRatioString: "" };
   }
 
   const wc = w / c;
-  const mix = `1 : ${(f / c).toFixed(2)} : ${(m / c).toFixed(2)} : ${(co / c).toFixed(2)} : ${(w / c).toFixed(2)}`;
+  const mix = `1 : ${(f / c).toFixed(2)} : ${(m / c).toFixed(
+    2
+  )} : ${(co / c).toFixed(2)} : ${(w / c).toFixed(2)}`;
 
-  document.getElementById("wcRatioValue").textContent = wc.toFixed(2);
-  document.getElementById("mixRatioValue").textContent = mix;
-
+  $("wcRatioValue").textContent = wc.toFixed(2);
+  $("mixRatioValue").textContent = mix;
   toggleRatioBoxes(true);
-
   return { wcRatio: wc, mixRatioString: mix };
-}
+};
 
-/* ---------- Input Mode UI ---------- */
+/* ---------- UI sync ---------- */
 
-function syncInputModeUI() {
+const syncInputModeUI = () => {
   const mode = getInputMode();
-  const kgInputs = document.getElementById("kgInputs");
-  const ratioInputs = document.getElementById("ratioInputs");
-  const kgHeading = document.getElementById("kgHeading");
-  const ratioHeading = document.getElementById("ratioHeading");
+  const kg = $("kgInputs");
+  const ratio = $("ratioInputs");
+  const kgH = $("kgHeading");
+  const ratioH = $("ratioHeading");
 
-  if (mode === "kg") {
-    if (kgInputs) kgInputs.style.display = "";
-    if (kgHeading) kgHeading.style.display = "";
-    if (ratioInputs) ratioInputs.style.display = "none";
-    if (ratioHeading) ratioHeading.style.display = "none";
-  } else {
-    if (kgInputs) kgInputs.style.display = "none";
-    if (kgHeading) kgHeading.style.display = "none";
-    if (ratioInputs) ratioInputs.style.display = "";
-    if (ratioHeading) ratioHeading.style.display = "";
-  }
-}
+  const showKg = mode === "kg";
+  if (kg) kg.style.display = showKg ? "" : "none";
+  if (kgH) kgH.style.display = showKg ? "" : "none";
+  if (ratio) ratio.style.display = showKg ? "none" : "";
+  if (ratioH) ratioH.style.display = showKg ? "none" : "";
+};
 
-/* ---------- Show / Hide "Other" fields ---------- */
+const syncConcreteTypeOther = () => {
+  const sel = $("concreteType");
+  const wrap = $("concreteTypeOtherWrapper");
+  if (!sel || !wrap) return;
+  wrap.style.display = sel.value === "Other" ? "" : "none";
+};
 
-function syncConcreteTypeOther() {
-  const select = document.getElementById("concreteType");
-  const wrapper = document.getElementById("concreteTypeOtherWrapper");
-  if (!select || !wrapper) return;
-  wrapper.style.display = select.value === "Other" ? "" : "none";
-}
-
-function syncCementTypeOther() {
-  const select = document.getElementById("cementType");
-  const wrapper = document.getElementById("cementTypeOtherWrapper");
-  if (!select || !wrapper) return;
-  wrapper.style.display = select.value === "Other" ? "" : "none";
-}
+const syncCementTypeOther = () => {
+  const sel = $("cementType");
+  const wrap = $("cementTypeOtherWrapper");
+  if (!sel || !wrap) return;
+  wrap.style.display = sel.value === "Other" ? "" : "none";
+};
 
 /* ---------- Validation ---------- */
 
-function validateForm() {
+const validateForm = () => {
   const mode = getInputMode();
 
   const commonRequired = [
-    "clientName",
-    "contactEmail",
-    "organisationType",
-    "contactPerson",
-    "phoneNumber",
-    "projectSite",
+    "studentName",
+    "matricNumber",
+    "studentPhone",
+    "programme",
+    "supervisorName",
+    "thesisTitle",
     "crushDate",
     "concreteType",
     "cementType",
@@ -246,80 +215,67 @@ function validateForm() {
     "notes",
   ];
 
-  const kgRequired = ["cementContent", "waterContent", "fineAgg", "mediumAgg", "coarseAgg"];
-  const ratioRequired = ["ratioCement", "ratioFine", "ratioMedium", "ratioCoarse", "ratioWater"];
+  const kgRequired = [
+    "cementContent",
+    "waterContent",
+    "fineAgg",
+    "mediumAgg",
+    "coarseAgg",
+  ];
+
+  const ratioRequired = [
+    "ratioCement",
+    "ratioFine",
+    "ratioMedium",
+    "ratioCoarse",
+    "ratioWater",
+  ];
 
   document.querySelectorAll(".error").forEach((el) => el.classList.remove("error"));
 
   const missing = [];
   let firstBad = null;
 
-  function checkId(id) {
-    const el = document.getElementById(id);
+  const checkId = (id) => {
+    const el = $(id);
     if (!el) return;
     if (!String(el.value).trim()) {
       el.classList.add("error");
       missing.push(id);
       if (!firstBad) firstBad = el;
     }
-  }
+  };
 
   commonRequired.forEach(checkId);
 
-  // If "Other" is selected, ensure details are given
-  const concreteType = document.getElementById("concreteType");
-  if (concreteType && concreteType.value === "Other") {
-    checkId("concreteTypeOther");
-  }
+  if ($("concreteType")?.value === "Other") checkId("concreteTypeOther");
+  if ($("cementType")?.value === "Other") checkId("cementTypeOther");
 
-  const cementType = document.getElementById("cementType");
-  if (cementType && cementType.value === "Other") {
-    checkId("cementTypeOther");
-  }
+  (mode === "kg" ? kgRequired : ratioRequired).forEach(checkId);
 
-  if (mode === "kg") {
-    kgRequired.forEach(checkId);
-  } else {
-    ratioRequired.forEach(checkId);
-  }
+  document.querySelectorAll("#admixtures-container .dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="adm_name"]');
+    const dosage = row.querySelector('input[name="adm_dosage"]');
+    if ((!name?.value.trim() || !dosage?.value.trim()) && (name || dosage)) {
+      if (name && !name.value.trim()) name.classList.add("error");
+      if (dosage && !dosage.value.trim()) dosage.classList.add("error");
+      missing.push("admixtures");
+      if (!firstBad) firstBad = name || dosage;
+    }
+  });
 
-    // If user has added any admixture rows, both fields in each row are required
-  const admRows = document.querySelectorAll("#admixtures-container .dynamic-row");
-  if (admRows.length > 0) {
-    admRows.forEach((row) => {
-      const nameInput = row.querySelector('input[name="adm_name"]');
-      const dosageInput = row.querySelector('input[name="adm_dosage"]');
-      const nameEmpty = !nameInput || !nameInput.value.trim();
-      const dosageEmpty = !dosageInput || !dosageInput.value.trim();
+  document.querySelectorAll("#scms-container .dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="scm_name"]');
+    const percent = row.querySelector('input[name="scm_percent"]');
+    if ((!name?.value.trim() || !percent?.value.trim()) && (name || percent)) {
+      if (name && !name.value.trim()) name.classList.add("error");
+      if (percent && !percent.value.trim()) percent.classList.add("error");
+      missing.push("scms");
+      if (!firstBad) firstBad = name || percent;
+    }
+  });
 
-      if (nameEmpty || dosageEmpty) {
-        if (nameEmpty && nameInput) nameInput.classList.add("error");
-        if (dosageEmpty && dosageInput) dosageInput.classList.add("error");
-        missing.push("admixtures");
-        if (!firstBad) firstBad = nameInput || dosageInput;
-      }
-    });
-  }
-
-  // If user has added any SCM rows, both fields in each row are required
-  const scmRows = document.querySelectorAll("#scms-container .dynamic-row");
-  if (scmRows.length > 0) {
-    scmRows.forEach((row) => {
-      const nameInput = row.querySelector('input[name="scm_name"]');
-      const percentInput = row.querySelector('input[name="scm_percent"]');
-      const nameEmpty = !nameInput || !nameInput.value.trim();
-      const percentEmpty = !percentInput || !percentInput.value.trim();
-
-      if (nameEmpty || percentEmpty) {
-        if (nameEmpty && nameInput) nameInput.classList.add("error");
-        if (percentEmpty && percentInput) percentInput.classList.add("error");
-        missing.push("scms");
-        if (!firstBad) firstBad = nameInput || percentInput;
-      }
-    });
-  }
-
-  const errorSummary = document.getElementById("form-error-summary");
+  const errorSummary = $("form-error-summary");
 
   if (missing.length) {
     if (errorSummary) {
@@ -330,93 +286,77 @@ function validateForm() {
     return false;
   }
 
-  if (errorSummary) {
-    errorSummary.style.display = "none";
-  }
+  if (errorSummary) errorSummary.style.display = "none";
   return true;
-}
+};
 
-/* ---------- Collect Form Data ---------- */
+/* ---------- Collect data ---------- */
 
-function collectFormData() {
+const collectFormData = () => {
   const mode = getInputMode();
 
-  // Concrete type (handling "Other")
-  let concreteType = document.getElementById("concreteType").value;
-  if (concreteType === "Other") {
-    concreteType = document.getElementById("concreteTypeOther").value.trim();
-  }
+  let concreteType = $("concreteType").value;
+  if (concreteType === "Other") concreteType = $("concreteTypeOther").value.trim();
 
-  // Cement type (handling "Other")
-  let cementType = document.getElementById("cementType").value;
-  if (cementType === "Other") {
-    cementType = document.getElementById("cementTypeOther").value.trim();
-  }
+  let cementType = $("cementType").value;
+  if (cementType === "Other") cementType = $("cementTypeOther").value.trim();
 
-  // Admixtures
   const admixtures = [];
   document.querySelectorAll("#admixtures-container .dynamic-row").forEach((row) => {
     const name = row.querySelector('input[name="adm_name"]').value.trim();
     const dosage = row.querySelector('input[name="adm_dosage"]').value.trim();
-    if (name || dosage) {
-      admixtures.push({ name, dosage });
-    }
+    if (name || dosage) admixtures.push({ name, dosage });
   });
 
-  // SCMs
   const scms = [];
   document.querySelectorAll("#scms-container .dynamic-row").forEach((row) => {
     const name = row.querySelector('input[name="scm_name"]').value.trim();
     const percent = row.querySelector('input[name="scm_percent"]').value.trim();
-    if (name || percent) {
-      scms.push({ name, percent });
-    }
+    if (name || percent) scms.push({ name, percent });
   });
 
-  // Kg inputs
-  const cementContent = Number(document.getElementById("cementContent").value || 0);
-  const waterContent = Number(document.getElementById("waterContent").value || 0);
-  const fineAgg = Number(document.getElementById("fineAgg").value || 0);
-  const mediumAgg = Number(document.getElementById("mediumAgg").value || 0);
-  const coarseAgg = Number(document.getElementById("coarseAgg").value || 0);
+  const cementContent = Number($("cementContent").value || 0);
+  const waterContent = Number($("waterContent").value || 0);
+  const fineAgg = Number($("fineAgg").value || 0);
+  const mediumAgg = Number($("mediumAgg").value || 0);
+  const coarseAgg = Number($("coarseAgg").value || 0);
 
-  // Ratio inputs
-  const ratioCement = Number(document.getElementById("ratioCement").value || 0);
-  const ratioFine = Number(document.getElementById("ratioFine").value || 0);
-  const ratioMedium = Number(document.getElementById("ratioMedium").value || 0);
-  const ratioCoarse = Number(document.getElementById("ratioCoarse").value || 0);
-  const ratioWater = Number(document.getElementById("ratioWater").value || 0);
+  const ratioCement = Number($("ratioCement").value || 0);
+  const ratioFine = Number($("ratioFine").value || 0);
+  const ratioMedium = Number($("ratioMedium").value || 0);
+  const ratioCoarse = Number($("ratioCoarse").value || 0);
+  const ratioWater = Number($("ratioWater").value || 0);
 
-  // Compute W/C + mix ratio
   let wcRatio = 0;
   let mixRatioString = "";
 
-    if (mode === "kg") {
+  if (mode === "kg") {
     wcRatio = updateWCRatioFromKg();
     mixRatioString = updateMixRatioFromKg();
   } else {
-    const result = updateWcAndMixFromRatio();
-    wcRatio = result.wcRatio;
-    mixRatioString = result.mixRatioString;
+    const r = updateWcAndMixFromRatio();
+    wcRatio = r.wcRatio;
+    mixRatioString = r.mixRatioString;
   }
 
-  // Main payload
-  const data = {
+  return {
     inputMode: mode,
-    clientName: document.getElementById("clientName").value.trim(),
-    contactEmail: document.getElementById("contactEmail").value.trim(),
-    organisationType: document.getElementById("organisationType").value.trim(),
-    contactPerson: document.getElementById("contactPerson").value.trim(),
-    phoneNumber: document.getElementById("phoneNumber").value.trim(),
-    projectSite: document.getElementById("projectSite").value.trim(),
-    crushDate: document.getElementById("crushDate").value,
+
+    studentName: $("studentName").value.trim(),
+    matricNumber: $("matricNumber").value.trim(),
+    studentPhone: $("studentPhone").value.trim(),
+    programme: $("programme").value.trim(),
+    supervisorName: $("supervisorName").value.trim(),
+    thesisTitle: $("thesisTitle").value.trim(),
+
+    crushDate: $("crushDate").value,
     concreteType,
     cementType,
-    slump: Number(document.getElementById("slump").value || 0),
-    ageDays: Number(document.getElementById("ageDays").value || 0),
-    cubesCount: Number(document.getElementById("cubesCount").value || 0),
-    targetStrength: Number(document.getElementById("targetStrength").value || 0),
-    notes: document.getElementById("notes").value.trim(),
+    slump: Number($("slump").value || 0),
+    ageDays: Number($("ageDays").value || 0),
+    cubesCount: Number($("cubesCount").value || 0),
+    targetStrength: Number($("targetStrength").value || 0),
+    notes: $("notes").value.trim(),
 
     cementContent,
     waterContent,
@@ -436,41 +376,38 @@ function collectFormData() {
     wcRatio,
     mixRatioString,
   };
+};
 
-  return data;
-}
+/* ---------- Local storage ---------- */
 
-/* ---------- Local Storage ---------- */
-
-function getLocalRecords() {
+const getLocalRecords = () => {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   } catch {
     return [];
   }
-}
+};
 
-function saveLocalRecords(list) {
+const saveLocalRecords = (list) =>
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
 
-function saveLocal(record) {
+const saveLocal = (record) => {
   const list = getLocalRecords();
   list.push(record);
   saveLocalRecords(list);
-}
+};
 
-/* ---------- Render Saved Table ---------- */
+/* ---------- Table render ---------- */
 
-function renderSavedRecords() {
+const renderSavedRecords = () => {
   const list = getLocalRecords();
-  const tbody = document.getElementById("mixes-table-body");
+  const tbody = $("mixes-table-body");
   if (!tbody) return;
-
   tbody.innerHTML = "";
 
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="no-data">No mixes saved yet.</td></tr>`;
+    tbody.innerHTML =
+      '<tr><td colspan="6" class="no-data">No mixes saved yet.</td></tr>';
     return;
   }
 
@@ -488,114 +425,96 @@ function renderSavedRecords() {
     tr.innerHTML = `
       <td>${r.recordId || "—"}</td>
       <td>${r.inputMode === "ratio" ? "Ratio" : "Kg/m³"}</td>
-      <td>${r.clientName || ""}</td>
+      <td>${r.studentName || ""}</td>
       <td>${r.concreteType || ""}</td>
       <td>${wcText}</td>
       <td>${when}</td>
     `;
-
     tbody.appendChild(tr);
   });
-}
+};
 
-/* ---------- Load Record Back Into Form ---------- */
+/* ---------- Load record into form ---------- */
 
-function loadRecordIntoForm(r) {
-  document.getElementById("clientName").value = r.clientName || "";
-  document.getElementById("contactEmail").value = r.contactEmail || "";
-  document.getElementById("organisationType").value = r.organisationType || "";
-  document.getElementById("contactPerson").value = r.contactPerson || "";
-  document.getElementById("phoneNumber").value = r.phoneNumber || "";
-  document.getElementById("projectSite").value = r.projectSite || "";
-  document.getElementById("crushDate").value = r.crushDate || "";
-  document.getElementById("slump").value = r.slump ?? "";
-  document.getElementById("ageDays").value = r.ageDays ?? "";
-  document.getElementById("cubesCount").value = r.cubesCount ?? "";
-  document.getElementById("targetStrength").value = r.targetStrength ?? "";
-  document.getElementById("notes").value = r.notes || "";
+const loadRecordIntoForm = (r) => {
+  const simpleFields = [
+    ["studentName", "studentName"],
+    ["matricNumber", "matricNumber"],
+    ["programme", "programme"],
+    ["supervisorName", "supervisorName"],
+    ["studentPhone", "studentPhone"],
+    ["thesisTitle", "thesisTitle"],
+    ["crushDate", "crushDate"],
+    ["slump", "slump"],
+    ["ageDays", "ageDays"],
+    ["cubesCount", "cubesCount"],
+    ["targetStrength", "targetStrength"],
+    ["notes", "notes"],
+  ];
 
-  // Restore Concrete Type
-  const concreteSelect = document.getElementById("concreteType");
-  const concreteOther = document.getElementById("concreteTypeOther");
-  if (concreteSelect) {
+  simpleFields.forEach(([id, key]) => {
+    const el = $(id);
+    if (el) el.value = r[key] ?? "";
+  });
+
+  // Concrete type
+  const cSel = $("concreteType");
+  const cOther = $("concreteTypeOther");
+  if (cSel) {
     const saved = r.concreteType || "";
     let matched = false;
-
-    for (const opt of concreteSelect.options) {
+    for (const opt of cSel.options) {
       if (opt.value === saved || opt.text === saved) {
-        concreteSelect.value = opt.value;
+        cSel.value = opt.value;
         matched = true;
         break;
       }
     }
-
     if (!matched) {
-      if (saved) {
-        concreteSelect.value = "Other";
-        if (concreteOther) concreteOther.value = saved;
-      } else {
-        concreteSelect.value = "";
-        if (concreteOther) concreteOther.value = "";
-      }
-    } else if (concreteOther) {
-      concreteOther.value = "";
-    }
+      cSel.value = saved ? "Other" : "";
+      if (cOther) cOther.value = saved || "";
+    } else if (cOther) cOther.value = "";
   }
 
-  // Restore Cement Type
-  const cementSelect = document.getElementById("cementType");
-  const cementOther = document.getElementById("cementTypeOther");
-  if (cementSelect) {
+  // Cement type
+  const ctSel = $("cementType");
+  const ctOther = $("cementTypeOther");
+  if (ctSel) {
     const saved = r.cementType || "";
     let matched = false;
-
-    for (const opt of cementSelect.options) {
+    for (const opt of ctSel.options) {
       if (opt.value === saved || opt.text === saved) {
-        cementSelect.value = opt.value;
+        ctSel.value = opt.value;
         matched = true;
         break;
       }
     }
-
     if (!matched) {
-      if (saved) {
-        cementSelect.value = "Other";
-        if (cementOther) cementOther.value = saved;
-      } else {
-        cementSelect.value = "";
-        if (cementOther) cementOther.value = "";
-      }
-    } else if (cementOther) {
-      cementOther.value = "";
-    }
+      ctSel.value = saved ? "Other" : "";
+      if (ctOther) ctOther.value = saved || "";
+    } else if (ctOther) ctOther.value = "";
   }
 
-  // Mix / mode
+  // Mode
   const mode = r.inputMode === "ratio" ? "ratio" : "kg";
-  const modeKg = document.getElementById("modeKg");
-  const modeRatio = document.getElementById("modeRatio");
-  if (mode === "kg") {
-    if (modeKg) modeKg.checked = true;
-  } else if (modeRatio) {
-    modeRatio.checked = true;
-  }
+  if (mode === "kg") $("modeKg").checked = true;
+  else $("modeRatio").checked = true;
   syncInputModeUI();
 
   // Kg inputs
-  document.getElementById("cementContent").value = r.cementContent ?? "";
-  document.getElementById("waterContent").value = r.waterContent ?? "";
-  document.getElementById("fineAgg").value = r.fineAgg ?? "";
-  document.getElementById("mediumAgg").value = r.mediumAgg ?? "";
-  document.getElementById("coarseAgg").value = r.coarseAgg ?? "";
+  $("cementContent").value = r.cementContent ?? "";
+  $("waterContent").value = r.waterContent ?? "";
+  $("fineAgg").value = r.fineAgg ?? "";
+  $("mediumAgg").value = r.mediumAgg ?? "";
+  $("coarseAgg").value = r.coarseAgg ?? "";
 
   // Ratio inputs
-  document.getElementById("ratioCement").value = r.ratioCement ?? "1";
-  document.getElementById("ratioFine").value = r.ratioFine ?? "";
-  document.getElementById("ratioMedium").value = r.ratioMedium ?? "";
-  document.getElementById("ratioCoarse").value = r.ratioCoarse ?? "";
-  document.getElementById("ratioWater").value = r.ratioWater ?? "";
+  $("ratioCement").value = r.ratioCement ?? "1";
+  $("ratioFine").value = r.ratioFine ?? "";
+  $("ratioMedium").value = r.ratioMedium ?? "";
+  $("ratioCoarse").value = r.ratioCoarse ?? "";
+  $("ratioWater").value = r.ratioWater ?? "";
 
-  // Update W/C + mix according to current mode
   if (mode === "kg") {
     updateWCRatioFromKg();
     updateMixRatioFromKg();
@@ -604,29 +523,23 @@ function loadRecordIntoForm(r) {
   }
 
   // Admixtures
-  const admContainer = document.getElementById("admixtures-container");
-  admContainer.innerHTML = "";
-  if (Array.isArray(r.admixtures) && r.admixtures.length) {
-    r.admixtures.forEach((a) => admContainer.appendChild(createAdmixtureRow(a)));
-  }
+  const admC = $("admixtures-container");
+  admC.innerHTML = "";
+  (r.admixtures || []).forEach((a) => admC.appendChild(createAdmixtureRow(a)));
 
   // SCMs
-  const scmContainer = document.getElementById("scms-container");
-  scmContainer.innerHTML = "";
-  if (Array.isArray(r.scms) && r.scms.length) {
-    r.scms.forEach((s) => scmContainer.appendChild(createScmRow(s)));
-  }
+  const scmC = $("scms-container");
+  scmC.innerHTML = "";
+  (r.scms || []).forEach((s) => scmC.appendChild(createScmRow(s)));
 
-  // “Other” visibility
   syncConcreteTypeOther();
   syncCementTypeOther();
-
   setStatusLine("Saved record loaded into form.", "info");
-}
+};
 
-/* ---------- PDF Generation ---------- */
+/* ---------- PDF ---------- */
 
-async function generatePDF(data) {
+const generatePDF = async (data) => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "pt", format: "A4" });
 
@@ -634,16 +547,13 @@ async function generatePDF(data) {
   const margin = 32;
   let y = 40;
 
-  // Logo
-  if (logoImageDataUrl) {
-    doc.addImage(logoImageDataUrl, "PNG", margin, y, 60, 60);
-  }
+  if (logoImageDataUrl) doc.addImage(logoImageDataUrl, "PNG", margin, y, 60, 60);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("CONCRETE LABORATORY – UNIVERSITY OF LAGOS", margin + 80, y + 20);
   doc.setFontSize(10);
-  doc.text("Cube Testing Request – External Clients", margin + 80, y + 38);
+  doc.text("Research Mix Intake – Student / Thesis Work", margin + 80, y + 38);
   y += 80;
 
   if (data.recordId) {
@@ -653,40 +563,39 @@ async function generatePDF(data) {
   }
 
   doc.setFont("helvetica", "bold");
-  doc.text("Client Details", margin, y);
+  doc.text("Student & Research Details", margin, y);
   y += 16;
   doc.setFont("helvetica", "normal");
-  doc.text(`Client Name: ${data.clientName}`, margin, y);
-  y += 14;
-  doc.text(`Contact Email: ${data.contactEmail}`, margin, y);
-  y += 14;
-  doc.text(`Contact Phone: ${data.phoneNumber}`, margin, y);
-  y += 14;
-  doc.text(`Organisation Type: ${data.organisationType}`, margin, y);
-  y += 14;
-  doc.text(`Contact Person: ${data.contactPerson}`, margin, y);
-  y += 14;
-  doc.text(`Project / Site: ${data.projectSite}`, margin, y);
-  y += 20;
+  [
+    `Student Name: ${data.studentName}`,
+    `Matric Number: ${data.matricNumber}`,
+    `Programme: ${data.programme}`,
+    `Supervisor: ${data.supervisorName}`,
+    `Student Phone: ${data.studentPhone}`,
+    `Project / Thesis Title: ${data.thesisTitle}`,
+  ].forEach((line) => {
+    doc.text(line, margin, y);
+    y += 14;
+  });
+  y += 6;
 
   doc.setFont("helvetica", "bold");
   doc.text("Test Information", margin, y);
   y += 16;
   doc.setFont("helvetica", "normal");
-  doc.text(`Crushing Date: ${data.crushDate}`, margin, y);
-  y += 14;
-  doc.text(`Concrete Type: ${data.concreteType}`, margin, y);
-  y += 14;
-  doc.text(`Cement Type: ${data.cementType}`, margin, y);
-  y += 14;
-  doc.text(`Slump (mm): ${data.slump}`, margin, y);
-  y += 14;
-  doc.text(`Age at Testing (days): ${data.ageDays}`, margin, y);
-  y += 14;
-  doc.text(`Number of Cubes: ${data.cubesCount}`, margin, y);
-  y += 14;
-  doc.text(`Target Strength (MPa): ${data.targetStrength}`, margin, y);
-  y += 20;
+  [
+    `Crushing Date: ${data.crushDate}`,
+    `Concrete Type: ${data.concreteType}`,
+    `Cement Type: ${data.cementType}`,
+    `Slump / Flow (mm): ${data.slump}`,
+    `Age at Testing (days): ${data.ageDays}`,
+    `Number of Cubes: ${data.cubesCount}`,
+    `Target Strength (MPa): ${data.targetStrength}`,
+  ].forEach((line) => {
+    doc.text(line, margin, y);
+    y += 14;
+  });
+  y += 6;
 
   doc.setFont("helvetica", "bold");
   doc.text(
@@ -700,34 +609,33 @@ async function generatePDF(data) {
   doc.setFont("helvetica", "normal");
 
   if (data.inputMode === "kg") {
-    doc.text(`Cement: ${data.cementContent}`, margin, y);
-    y += 14;
-    doc.text(`Water: ${data.waterContent}`, margin, y);
-    y += 14;
-    doc.text(`Fine Aggregate: ${data.fineAgg}`, margin, y);
-    y += 14;
-    doc.text(`Medium Aggregate: ${data.mediumAgg}`, margin, y);
-    y += 14;
-    doc.text(`Coarse Aggregate: ${data.coarseAgg}`, margin, y);
-    y += 14;
+    [
+      `Cement: ${data.cementContent}`,
+      `Water: ${data.waterContent}`,
+      `Fine Aggregate: ${data.fineAgg}`,
+      `Medium Aggregate: ${data.mediumAgg}`,
+      `Coarse Aggregate: ${data.coarseAgg}`,
+    ].forEach((line) => {
+      doc.text(line, margin, y);
+      y += 14;
+    });
   } else {
-    doc.text(`Cement: ${data.ratioCement}`, margin, y);
-    y += 14;
-    doc.text(`Fine Aggregate: ${data.ratioFine}`, margin, y);
-    y += 14;
-    doc.text(`Medium Aggregate: ${data.ratioMedium}`, margin, y);
-    y += 14;
-    doc.text(`Coarse Aggregate: ${data.ratioCoarse}`, margin, y);
-    y += 14;
-    doc.text(`Water: ${data.ratioWater}`, margin, y);
-    y += 14;
+    [
+      `Cement: ${data.ratioCement}`,
+      `Fine Aggregate: ${data.ratioFine}`,
+      `Medium Aggregate: ${data.ratioMedium}`,
+      `Coarse Aggregate: ${data.ratioCoarse}`,
+      `Water: ${data.ratioWater}`,
+    ].forEach((line) => {
+      doc.text(line, margin, y);
+      y += 14;
+    });
   }
 
   const wcRatio =
     typeof data.wcRatio === "number" && !isNaN(data.wcRatio)
       ? data.wcRatio.toFixed(2)
       : String(data.wcRatio || "");
-
   doc.text(`W/C Ratio: ${wcRatio}`, margin, y);
   y += 14;
   doc.text(`Mix Ratio: ${data.mixRatioString || ""}`, margin, y);
@@ -737,26 +645,22 @@ async function generatePDF(data) {
   doc.text("Admixtures", margin, y);
   y += 16;
   doc.setFont("helvetica", "normal");
-  if (data.admixtures && data.admixtures.length) {
+  if (data.admixtures?.length) {
     data.admixtures.forEach((a, i) => {
-      doc.text(
-        `${i + 1}. ${a.name || ""} | ${a.dosage || ""} L/100kg`,
-        margin,
-        y
-      );
+      doc.text(`${i + 1}. ${a.name || ""} | ${a.dosage || ""} L/100kg`, margin, y);
       y += 14;
     });
   } else {
     doc.text("None", margin, y);
     y += 14;
   }
-  y += 20;
+  y += 6;
 
   doc.setFont("helvetica", "bold");
   doc.text("SCMs", margin, y);
   y += 16;
   doc.setFont("helvetica", "normal");
-  if (data.scms && data.scms.length) {
+  if (data.scms?.length) {
     data.scms.forEach((s, i) => {
       doc.text(`${i + 1}. ${s.name || ""} | ${s.percent || ""}%`, margin, y);
       y += 14;
@@ -765,7 +669,7 @@ async function generatePDF(data) {
     doc.text("None", margin, y);
     y += 14;
   }
-  y += 20;
+  y += 6;
 
   doc.setFont("helvetica", "bold");
   doc.text("Notes", margin, y);
@@ -778,26 +682,26 @@ async function generatePDF(data) {
   doc.text(notesLines, margin, y);
 
   const filename = `${sanitizeFilename(
-    data.clientName || "Client"
-  )}_${sanitizeFilename(data.projectSite || "CubeTest")}.pdf`;
+    data.studentName || "Student"
+  )}_${sanitizeFilename(data.thesisTitle || "ResearchMix")}.pdf`;
   doc.save(filename);
-}
+};
 
-/* ---------- CSV Export & Clear ---------- */
+/* ---------- CSV & clear ---------- */
 
-function exportCsv() {
+const exportCsv = () => {
   const list = getLocalRecords();
   if (!list.length) return;
 
   const headers = [
     "RecordId",
     "InputMode",
-    "ClientName",
-    "Email",
-    "Phone",
-    "organisationType",
-    "ContactPerson",
-    "ProjectSite",
+    "StudentName",
+    "MatricNumber",
+    "StudentPhone",
+    "Programme",
+    "SupervisorName",
+    "ThesisTitle",
     "CrushDate",
     "ConcreteType",
     "CementType",
@@ -827,12 +731,12 @@ function exportCsv() {
     const row = [
       r.recordId || "",
       r.inputMode || "",
-      r.clientName || "",
-      r.contactEmail || "",
-      r.phoneNumber || "",
-      r.organisationType || "",
-      r.contactPerson || "",
-      r.projectSite || "",
+      r.studentName || "",
+      r.matricNumber || "",
+      r.studentPhone || "",
+      r.programme || "",
+      r.supervisorName || "",
+      r.thesisTitle || "",
       r.crushDate || "",
       r.concreteType || "",
       r.cementType || "",
@@ -863,76 +767,60 @@ function exportCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "cube_test_records.csv";
+  a.download = "research_mix_records.csv";
   a.click();
   URL.revokeObjectURL(url);
-}
+};
 
-function clearAllRecords() {
+const clearAllRecords = () => {
   saveLocalRecords([]);
   renderSavedRecords();
   setStatusLine("All saved records cleared.", "info");
-}
+};
 
-/* ---------- Form Submit ---------- */
+/* ---------- Submit ---------- */
 
-async function submitForm(event) {
-  event.preventDefault();
+const submitForm = async (e) => {
+  e.preventDefault();
   if (!validateForm()) return;
 
   setStatusLine("Submitting...", "info");
-
   const data = collectFormData();
 
-  // Try to load logo for PDF if not already done
-  if (!logoImageDataUrl) {
-    logoImageDataUrl = await loadImageAsDataURL("unilag-logo.png");
-  }
+  if (!logoImageDataUrl) logoImageDataUrl = await loadImageAsDataURL("unilag-logo.png");
 
   let apiResult = null;
-
   try {
     const res = await fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-
-    if (res.ok) {
-      apiResult = await res.json();
-    } else {
-      console.error("API error", res.status);
-    }
+    if (res.ok) apiResult = await res.json();
+    else console.error("API error", res.status);
   } catch (err) {
     console.error("Network error submitting to API:", err);
   }
 
-  if (apiResult && apiResult.success) {
-    // update wc/mix ratio from server if returned
+  if (apiResult?.success) {
     if (typeof apiResult.wcRatio !== "undefined") {
       data.wcRatio = apiResult.wcRatio;
-      const span = document.getElementById("wcRatioValue");
-      if (span && !isNaN(apiResult.wcRatio)) {
-        span.textContent = apiResult.wcRatio.toFixed(2);
-      }
+      if (!isNaN(apiResult.wcRatio))
+        $("wcRatioValue").textContent = apiResult.wcRatio.toFixed(2);
     }
     if (apiResult.mixRatioString) {
       data.mixRatioString = apiResult.mixRatioString;
-      const span = document.getElementById("mixRatioValue");
-      if (span) span.textContent = apiResult.mixRatioString;
+      $("mixRatioValue").textContent = apiResult.mixRatioString;
     }
 
     data.recordId = apiResult.recordId;
-
-    // Show modal with application number
-    const modal = document.getElementById("appModal");
-    const modalNumber = document.getElementById("modalNumber");
+    const modal = $("appModal");
+    const modalNumber = $("modalNumber");
     if (modal && modalNumber) {
       modalNumber.textContent = apiResult.recordId;
       modal.classList.remove("hidden");
     }
-
-    setStatusLine("Submitted to lab and saved locally.", "success");
+    setStatusLine("Submitted and saved locally.", "success");
   } else {
     setStatusLine(
       "Saved locally and PDF generated, but could not submit to server.",
@@ -940,155 +828,95 @@ async function submitForm(event) {
     );
   }
 
-  // Save locally
-  const localRecord = {
-    ...data,
-    recordId: data.recordId || null,
-    savedAt: new Date().toISOString(),
-  };
+  const localRecord = { ...data, recordId: data.recordId || null, savedAt: new Date().toISOString() };
   saveLocal(localRecord);
   renderSavedRecords();
 
-  // Generate PDF
   await generatePDF(data);
-}
+};
 
-/* ---------- Reset Form ---------- */
+/* ---------- Reset ---------- */
 
-function resetFormFields() {
-  const form = document.getElementById("mix-form");
+const resetFormFields = () => {
+  const form = $("mix-form");
   if (!form) return;
   form.reset();
-
-  // Reset ratio mode UI, date, default ratio cement
-  setDateToToday(document.getElementById("crushDate"));
-  document.getElementById("ratioCement").value = "1";
-  document.getElementById("wcRatioValue").textContent = "0.00";
-  document.getElementById("mixRatioValue").textContent = "–";
-
+  setToday($("crushDate"));
+  $("ratioCement").value = "1";
+  $("wcRatioValue").textContent = "0.00";
+  $("mixRatioValue").textContent = "–";
   syncInputModeUI();
   syncConcreteTypeOther();
   syncCementTypeOther();
-
-  // Reset dynamic rows (containers empty – user must click "Add")
-  const admContainer = document.getElementById("admixtures-container");
-  admContainer.innerHTML = "";
-
-  const scmContainer = document.getElementById("scms-container");
-  scmContainer.innerHTML = "";
-
+  $("admixtures-container").innerHTML = "";
+  $("scms-container").innerHTML = "";
   setStatusLine("", "info");
-}
+};
 
-/* ---------- Modal Wiring ---------- */
+/* ---------- Modal ---------- */
 
-function initModal() {
-  const modal = document.getElementById("appModal");
-  const closeBtn = document.getElementById("modalClose");
+const initModal = () => {
+  const modal = $("appModal");
+  const closeBtn = $("modalClose");
   if (!modal || !closeBtn) return;
-
-  function close() {
-    modal.classList.add("hidden");
-  }
-
+  const close = () => modal.classList.add("hidden");
   closeBtn.addEventListener("click", close);
   modal.addEventListener("click", (e) => {
     if (e.target === modal) close();
   });
-}
+};
 
 /* ---------- Init ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Year in footer
-  const yearSpan = document.getElementById("year");
-  if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+  const ySpan = $("year");
+  if (ySpan) ySpan.textContent = new Date().getFullYear();
 
-  // Date default
-  setDateToToday(document.getElementById("crushDate"));
-
-  // Load logo early
+  setToday($("crushDate"));
   loadImageAsDataURL("unilag-logo.png").then((d) => (logoImageDataUrl = d));
 
-  // Add-row buttons
-  document.getElementById("add-admixture-btn").onclick = () =>
-    document
-      .getElementById("admixtures-container")
-      .appendChild(createAdmixtureRow());
+  $("add-admixture-btn").onclick = () =>
+    $("admixtures-container").appendChild(createAdmixtureRow());
+  $("add-scm-btn").onclick = () =>
+    $("scms-container").appendChild(createScmRow());
 
-  document.getElementById("add-scm-btn").onclick = () =>
-    document.getElementById("scms-container").appendChild(createScmRow());
-
-  // Mode radio
-  document.getElementById("modeKg").addEventListener("change", syncInputModeUI);
-  document.getElementById("modeRatio").addEventListener("change", syncInputModeUI);
+  $("modeKg").addEventListener("change", syncInputModeUI);
+  $("modeRatio").addEventListener("change", syncInputModeUI);
   syncInputModeUI();
 
-  // "Other" selectors
-  document
-    .getElementById("concreteType")
-    .addEventListener("change", syncConcreteTypeOther);
-  document
-    .getElementById("cementType")
-    .addEventListener("change", syncCementTypeOther);
+  $("concreteType").addEventListener("change", syncConcreteTypeOther);
+  $("cementType").addEventListener("change", syncCementTypeOther);
   syncConcreteTypeOther();
   syncCementTypeOther();
 
-  // Kg fields updates
-  document.getElementById("cementContent").addEventListener("input", () => {
-    updateWCRatioFromKg();
-    updateMixRatioFromKg();
-  });
-  document.getElementById("waterContent").addEventListener("input", () => {
-    updateWCRatioFromKg();
-    updateMixRatioFromKg();
-  });
-  document.getElementById("fineAgg").addEventListener("input", updateMixRatioFromKg);
-  document.getElementById("mediumAgg").addEventListener("input", updateMixRatioFromKg);
-  document.getElementById("coarseAgg").addEventListener("input", updateMixRatioFromKg);
+  ["cementContent", "waterContent"].forEach((id) =>
+    $(id).addEventListener("input", () => {
+      updateWCRatioFromKg();
+      updateMixRatioFromKg();
+    })
+  );
+  ["fineAgg", "mediumAgg", "coarseAgg"].forEach((id) =>
+    $(id).addEventListener("input", updateMixRatioFromKg)
+  );
 
-   // Ratio fields updates
-  document
-    .getElementById("ratioCement")
-    .addEventListener("input", updateWcAndMixFromRatio);
-  document
-    .getElementById("ratioFine")
-    .addEventListener("input", updateWcAndMixFromRatio);
-  document
-    .getElementById("ratioMedium")
-    .addEventListener("input", updateWcAndMixFromRatio);
-  document
-    .getElementById("ratioCoarse")
-    .addEventListener("input", updateWcAndMixFromRatio);
-  document
-    .getElementById("ratioWater")
-    .addEventListener("input", updateWcAndMixFromRatio);
+  ["ratioCement", "ratioFine", "ratioMedium", "ratioCoarse", "ratioWater"].forEach(
+    (id) => $(id).addEventListener("input", updateWcAndMixFromRatio)
+  );
 
-  // Submit
-  document.getElementById("mix-form").addEventListener("submit", submitForm);
+  $("mix-form").addEventListener("submit", submitForm);
+  $("reset-form-btn").addEventListener("click", resetFormFields);
+  $("export-csv-btn").addEventListener("click", exportCsv);
+  $("clear-all-btn").addEventListener("click", clearAllRecords);
 
-  // Reset
-  document
-    .getElementById("reset-form-btn")
-    .addEventListener("click", resetFormFields);
-
-  // CSV + Clear
-  document.getElementById("export-csv-btn").addEventListener("click", exportCsv);
-  document.getElementById("clear-all-btn").addEventListener("click", clearAllRecords);
-
-  // Table row click
-  document.getElementById("mixes-table-body").addEventListener("click", (e) => {
+  $("mixes-table-body").addEventListener("click", (e) => {
     const tr = e.target.closest("tr");
     if (!tr || tr.classList.contains("no-data")) return;
     const idx = tr.dataset.index;
-    if (typeof idx === "undefined") return;
+    if (idx === undefined) return;
     const record = getLocalRecords()[idx];
     if (record) loadRecordIntoForm(record);
   });
 
-  // Modal
   initModal();
-
-  // First render of saved records
   renderSavedRecords();
 });
