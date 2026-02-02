@@ -93,6 +93,113 @@ const createScmRow = (data = {}) => {
   return row;
 };
 
+
+/* ---------- Dynamic rows (kg materials) ---------- */
+
+const KG_MATERIAL_TYPES = [
+  { value: "water", label: "Water (kg/m³)", totalId: "waterContent" },
+  { value: "fine", label: "Fine Aggregate (kg/m³)", totalId: "fineAgg" },
+  { value: "medium", label: "Medium Aggregate (kg/m³)", totalId: "mediumAgg" },
+  { value: "coarse", label: "Coarse Aggregate (kg/m³)", totalId: "coarseAgg" },
+];
+
+const createKgMaterialRow = (data = {}) => {
+  const row = document.createElement("div");
+  row.className = "dynamic-row kg-material-row";
+
+  const optionsHtml = KG_MATERIAL_TYPES.map((t) => {
+    const selected = (data.type || "") === t.value ? "selected" : "";
+    return `<option value="${t.value}" ${selected}>${t.label}</option>`;
+  }).join("");
+
+  row.innerHTML = `
+    <label>
+      <span class="label-line">
+        Material <span class="required-asterisk">*</span>
+      </span>
+      <select name="kg_type">
+        ${optionsHtml}
+      </select>
+    </label>
+
+    <label>
+      <span class="label-line">
+        Quantity <span class="required-asterisk">*</span>
+      </span>
+      <input type="number" min="0" step="0.1" name="kg_qty" value="${data.qty ?? ""}">
+    </label>
+
+    <button type="button" class="remove-row-btn" aria-label="Remove row">×</button>
+  `;
+
+  const onChange = () => syncKgMaterialTotals();
+  row.querySelector('select[name="kg_type"]').addEventListener("change", onChange);
+  row.querySelector('input[name="kg_qty"]').addEventListener("input", onChange);
+
+  row.querySelector(".remove-row-btn").onclick = () => {
+    row.remove();
+    syncKgMaterialTotals();
+  };
+
+  return row;
+};
+
+const ensureDefaultKgMaterialRows = () => {
+  const c = $("kg-materials-container");
+  if (!c) return;
+  if (c.querySelectorAll(".dynamic-row").length) return;
+
+  // one row each, blank quantity by default
+  KG_MATERIAL_TYPES.forEach((t) => c.appendChild(createKgMaterialRow({ type: t.value })));
+  syncKgMaterialTotals();
+};
+
+const syncKgMaterialTotals = () => {
+  const c = $("kg-materials-container");
+  if (!c) return;
+
+  // reset totals
+  KG_MATERIAL_TYPES.forEach((t) => {
+    const totalEl = $(t.totalId);
+    if (totalEl) totalEl.value = "";
+  });
+
+  const totals = { water: 0, fine: 0, medium: 0, coarse: 0 };
+  const seen = { water: false, fine: false, medium: false, coarse: false };
+
+  c.querySelectorAll(".dynamic-row").forEach((row) => {
+    const type = row.querySelector('select[name="kg_type"]')?.value;
+    const qtyRaw = row.querySelector('input[name="kg_qty"]')?.value;
+
+    if (!type) return;
+
+    // Track presence even if qty is blank (validation will handle)
+    if (Object.prototype.hasOwnProperty.call(seen, type)) seen[type] = true;
+
+    const qty = parseFloat(qtyRaw);
+    if (!isNaN(qty) && Object.prototype.hasOwnProperty.call(totals, type)) {
+      totals[type] += qty;
+    }
+  });
+
+  // push totals into hidden inputs (as strings), keeping "" if type is missing
+  KG_MATERIAL_TYPES.forEach((t) => {
+    const totalEl = $(t.totalId);
+    if (!totalEl) return;
+
+    if (!seen[t.value]) {
+      totalEl.value = ""; // missing category
+    } else {
+      // If all rows blank/NaN, totals[type] will be 0; keep "0" so validation can pass when user intentionally enters 0
+      totalEl.value = String(totals[t.value]);
+    }
+  });
+
+  // refresh derived boxes
+  updateWCRatioFromKg();
+  updateMixRatioFromKg();
+};
+
 /* ---------- W/C + Mix ratio ---------- */
 
 const toggleRatioBoxes = (show) => {
@@ -253,6 +360,38 @@ const validateForm = () => {
 
   (mode === "kg" ? kgRequired : ratioRequired).forEach(checkId);
 
+  // Extra validation for dynamic kg material rows (Water + Aggregates)
+  if (mode === "kg") {
+    const c = $("kg-materials-container");
+    const requiredTypes = ["water", "fine", "medium", "coarse"];
+    let firstRowBad = null;
+
+    requiredTypes.forEach((t) => {
+      const rows = c ? Array.from(c.querySelectorAll(".dynamic-row")) : [];
+      const matching = rows.filter(
+        (row) => row.querySelector('select[name="kg_type"]')?.value === t
+      );
+
+      if (!matching.length) {
+        missing.push("kgMaterials");
+        if (c) c.classList.add("error");
+        if (!firstRowBad && c) firstRowBad = c;
+        return;
+      }
+
+      matching.forEach((row) => {
+        const qtyEl = row.querySelector('input[name="kg_qty"]');
+        if (qtyEl && qtyEl.value === "") {
+          qtyEl.classList.add("error");
+          missing.push("kgMaterials");
+          if (!firstRowBad) firstRowBad = qtyEl;
+        }
+      });
+    });
+
+    if (firstRowBad && !firstBad) firstBad = firstRowBad;
+  }
+
   document.querySelectorAll("#admixtures-container .dynamic-row").forEach((row) => {
     const name = row.querySelector('input[name="adm_name"]');
     const dosage = row.querySelector('input[name="adm_dosage"]');
@@ -315,6 +454,14 @@ const collectFormData = () => {
     if (name || percent) scms.push({ name, percent });
   });
 
+
+  const kgMaterials = [];
+  document.querySelectorAll("#kg-materials-container .dynamic-row").forEach((row) => {
+    const type = row.querySelector('select[name="kg_type"]')?.value || "";
+    const qty = row.querySelector('input[name="kg_qty"]')?.value ?? "";
+    if (type) kgMaterials.push({ type, qty });
+  });
+
   const cementContent = Number($("cementContent").value || 0);
   const waterContent = Number($("waterContent").value || 0);
   const fineAgg = Number($("fineAgg").value || 0);
@@ -372,6 +519,8 @@ const collectFormData = () => {
 
     admixtures,
     scms,
+
+    kgMaterials,
 
     wcRatio,
     mixRatioString,
@@ -514,14 +663,42 @@ const loadRecordIntoForm = (r) => {
   else $("modeRatio").checked = true;
   syncInputModeUI();
 
+
   // Kg inputs
   $("cementContent").value = r.cementContent ?? "";
-  $("waterContent").value = r.waterContent ?? "";
-  $("fineAgg").value = r.fineAgg ?? "";
-  $("mediumAgg").value = r.mediumAgg ?? "";
-  $("coarseAgg").value = r.coarseAgg ?? "";
+
+  // Dynamic kg material rows
+  const kgC = $("kg-materials-container");
+  if (kgC) {
+    kgC.innerHTML = "";
+
+    if (Array.isArray(r.kgMaterials) && r.kgMaterials.length) {
+      r.kgMaterials.forEach((it) => kgC.appendChild(createKgMaterialRow({
+        type: it.type,
+        qty: it.qty === "" ? "" : Number(it.qty),
+      })));
+    } else {
+      // Backward compatibility: create one row each using saved totals
+      const fallback = [
+        { type: "water", qty: r.waterContent ?? "" },
+        { type: "fine", qty: r.fineAgg ?? "" },
+        { type: "medium", qty: r.mediumAgg ?? "" },
+        { type: "coarse", qty: r.coarseAgg ?? "" },
+      ];
+      fallback.forEach((it) => kgC.appendChild(createKgMaterialRow(it)));
+    }
+
+    syncKgMaterialTotals();
+  } else {
+    // If container missing, keep legacy hidden totals
+    $("waterContent").value = r.waterContent ?? "";
+    $("fineAgg").value = r.fineAgg ?? "";
+    $("mediumAgg").value = r.mediumAgg ?? "";
+    $("coarseAgg").value = r.coarseAgg ?? "";
+  }
 
   // Ratio inputs
+
   $("ratioCement").value = r.ratioCement ?? "1";
   $("ratioFine").value = r.ratioFine ?? "";
   $("ratioMedium").value = r.ratioMedium ?? "";
@@ -858,11 +1035,23 @@ const resetFormFields = () => {
   $("ratioCement").value = "1";
   $("wcRatioValue").textContent = "0.00";
   $("mixRatioValue").textContent = "–";
+
+  // Clear dynamic groups
+  $("admixtures-container").innerHTML = "";
+  $("scms-container").innerHTML = "";
+
+  const kgC = $("kg-materials-container");
+  if (kgC) kgC.innerHTML = "";
+  if ($("waterContent")) $("waterContent").value = "";
+  if ($("fineAgg")) $("fineAgg").value = "";
+  if ($("mediumAgg")) $("mediumAgg").value = "";
+  if ($("coarseAgg")) $("coarseAgg").value = "";
+
   syncInputModeUI();
   syncConcreteTypeOther();
   syncCementTypeOther();
-  $("admixtures-container").innerHTML = "";
-  $("scms-container").innerHTML = "";
+
+  ensureDefaultKgMaterialRows();
   setStatusLine("", "info");
 };
 
@@ -888,6 +1077,17 @@ document.addEventListener("DOMContentLoaded", () => {
   setToday($("crushDate"));
   loadImageAsDataURL("unilag-logo.png").then((d) => (logoImageDataUrl = d));
 
+
+  // Kg material rows (Water + Aggregates)
+  const addKgBtn = $("add-kg-material-btn");
+  if (addKgBtn) {
+    addKgBtn.onclick = () => {
+      const c = $("kg-materials-container");
+      if (c) c.appendChild(createKgMaterialRow());
+      syncKgMaterialTotals();
+    };
+  }
+  ensureDefaultKgMaterialRows();
   $("add-admixture-btn").onclick = () =>
     $("admixtures-container").appendChild(createAdmixtureRow());
   $("add-scm-btn").onclick = () =>
