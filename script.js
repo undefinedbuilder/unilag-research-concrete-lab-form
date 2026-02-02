@@ -30,32 +30,9 @@ const setStatusLine = (msg, type = "info") => {
   el.className = `status-pill status-${type}`;
 };
 
-// Input mode is now a segmented control (buttons) to match the deployed client form UX.
-let CURRENT_MODE = "kg";
-const getInputMode = () => CURRENT_MODE || "kg";
-
-const setInputMode = (mode) => {
-  CURRENT_MODE = mode === "ratio" ? "ratio" : "kg";
-
-  const kgTab = $("modeKg");
-  const ratioTab = $("modeRatio");
-  if (kgTab && ratioTab) {
-    const isKg = CURRENT_MODE === "kg";
-    kgTab.classList.toggle("is-active", isKg);
-    ratioTab.classList.toggle("is-active", !isKg);
-    kgTab.setAttribute("aria-selected", String(isKg));
-    ratioTab.setAttribute("aria-selected", String(!isKg));
-  }
-
-  syncInputModeUI();
-  // Recompute ratios when switching.
-  if (CURRENT_MODE === "kg") {
-    updateWCRatioFromKg();
-    updateMixRatioFromKg();
-  } else {
-    updateWcAndMixFromRatio();
-  }
-};
+const getInputMode = () =>
+  (document.querySelector('input[name="inputMode"]:checked') || {}).value ||
+  "kg";
 
 const loadImageAsDataURL = (path) =>
   fetch(path)
@@ -116,66 +93,6 @@ const createScmRow = (data = {}) => {
   return row;
 };
 
-// Generic quantity rows for material quantities (kg/m³ and ratio mode)
-// Styled using the exact same .dynamic-row / .remove-row-btn as Admixtures/SCMs.
-const createQuantityRow = ({ label = "", value = "" } = {}, opts = {}) => {
-  const {
-    itemLabel = "Type / Description",
-    valueLabel = "Quantity",
-    valueStep = "0.1",
-    valueMin = "0",
-    valueName = "qty_value",
-    labelName = "qty_label",
-  } = opts;
-
-  const row = document.createElement("div");
-  row.className = "dynamic-row";
-  row.innerHTML = `
-    <label>
-      <span class="label-line">${itemLabel}</span>
-      <input type="text" name="${labelName}" value="${label}">
-    </label>
-    <label>
-      <span class="label-line">${valueLabel} <span class="required-asterisk">*</span></span>
-      <input type="number" min="${valueMin}" step="${valueStep}" name="${valueName}" value="${value}">
-    </label>
-    <button type="button" class="remove-row-btn">×</button>
-  `;
-  row.querySelector(".remove-row-btn").onclick = () => {
-    row.remove();
-    // Keep ratios fresh after deletes.
-    if (getInputMode() === "kg") {
-      updateWCRatioFromKg();
-      updateMixRatioFromKg();
-    } else {
-      updateWcAndMixFromRatio();
-    }
-  };
-  return row;
-};
-
-const sumContainerValues = (containerId, valueName) => {
-  const el = $(containerId);
-  if (!el) return NaN;
-  const inputs = Array.from(el.querySelectorAll(`input[name="${valueName}"]`));
-  if (!inputs.length) return NaN;
-  const vals = inputs.map((i) => parseFloat(i.value));
-  if (vals.some((v) => isNaN(v))) return NaN;
-  return vals.reduce((a, b) => a + b, 0);
-};
-
-const readRows = (containerId, labelName, valueName) => {
-  const el = $(containerId);
-  if (!el) return [];
-  const rows = [];
-  el.querySelectorAll(".dynamic-row").forEach((row) => {
-    const label = (row.querySelector(`input[name="${labelName}"]`) || {}).value || "";
-    const value = (row.querySelector(`input[name="${valueName}"]`) || {}).value || "";
-    if (label || value) rows.push({ label, value });
-  });
-  return rows;
-};
-
 /* ---------- W/C + Mix ratio ---------- */
 
 const toggleRatioBoxes = (show) => {
@@ -187,10 +104,10 @@ const toggleRatioBoxes = (show) => {
 
 const updateWCRatioFromKg = () => {
   const cement = parseFloat($("cementContent").value);
-  const water = sumContainerValues("water-kg-container", "water_kg_value");
-  const fine = sumContainerValues("fine-kg-container", "fine_kg_value");
-  const medium = sumContainerValues("medium-kg-container", "medium_kg_value");
-  const coarse = sumContainerValues("coarse-kg-container", "coarse_kg_value");
+  const water = parseFloat($("waterContent").value);
+  const fine = parseFloat($("fineAgg").value);
+  const medium = parseFloat($("mediumAgg").value);
+  const coarse = parseFloat($("coarseAgg").value);
 
   if ([cement, water, fine, medium, coarse].some((v) => isNaN(v))) {
     toggleRatioBoxes(false);
@@ -205,10 +122,10 @@ const updateWCRatioFromKg = () => {
 
 const updateMixRatioFromKg = () => {
   const cement = parseFloat($("cementContent").value);
-  const fine = sumContainerValues("fine-kg-container", "fine_kg_value");
-  const medium = sumContainerValues("medium-kg-container", "medium_kg_value");
-  const coarse = sumContainerValues("coarse-kg-container", "coarse_kg_value");
-  const water = sumContainerValues("water-kg-container", "water_kg_value");
+  const fine = parseFloat($("fineAgg").value);
+  const medium = parseFloat($("mediumAgg").value);
+  const coarse = parseFloat($("coarseAgg").value);
+  const water = parseFloat($("waterContent").value);
 
   if ([cement, fine, medium, coarse, water].some((v) => isNaN(v))) {
     toggleRatioBoxes(false);
@@ -225,10 +142,10 @@ const updateMixRatioFromKg = () => {
 
 const updateWcAndMixFromRatio = () => {
   const c = parseFloat($("ratioCement").value);
-  const f = sumContainerValues("fine-ratio-container", "fine_ratio_value");
-  const m = sumContainerValues("medium-ratio-container", "medium_ratio_value");
-  const co = sumContainerValues("coarse-ratio-container", "coarse_ratio_value");
-  const w = sumContainerValues("water-ratio-container", "water_ratio_value");
+  const f = parseFloat($("ratioFine").value);
+  const m = parseFloat($("ratioMedium").value);
+  const co = parseFloat($("ratioCoarse").value);
+  const w = parseFloat($("ratioWater").value);
 
   if ([c, f, m, co, w].some((v) => isNaN(v))) {
     toggleRatioBoxes(false);
@@ -298,9 +215,21 @@ const validateForm = () => {
     "notes",
   ];
 
-  // Cement stays fixed; all other materials are dynamic rows.
-  const kgFixedRequired = ["cementContent"];
-  const ratioFixedRequired = ["ratioCement"]; // readonly but keeps a stable base
+  const kgRequired = [
+    "cementContent",
+    "waterContent",
+    "fineAgg",
+    "mediumAgg",
+    "coarseAgg",
+  ];
+
+  const ratioRequired = [
+    "ratioCement",
+    "ratioFine",
+    "ratioMedium",
+    "ratioCoarse",
+    "ratioWater",
+  ];
 
   document.querySelectorAll(".error").forEach((el) => el.classList.remove("error"));
 
@@ -322,39 +251,7 @@ const validateForm = () => {
   if ($("concreteType")?.value === "Other") checkId("concreteTypeOther");
   if ($("cementType")?.value === "Other") checkId("cementTypeOther");
 
-  // Fixed required field per mode
-  (mode === "kg" ? kgFixedRequired : ratioFixedRequired).forEach(checkId);
-
-  const checkDynamic = (containerId, valueName) => {
-    const container = $(containerId);
-    if (!container) return;
-    const inputs = Array.from(container.querySelectorAll(`input[name="${valueName}"]`));
-    if (!inputs.length) {
-      missing.push(containerId);
-      const addBtn = document.querySelector(`[data-add-for="${containerId}"]`);
-      if (!firstBad && addBtn) firstBad = addBtn;
-      return;
-    }
-    inputs.forEach((i) => {
-      if (!String(i.value).trim()) {
-        i.classList.add("error");
-        missing.push(containerId);
-        if (!firstBad) firstBad = i;
-      }
-    });
-  };
-
-  if (mode === "kg") {
-    checkDynamic("water-kg-container", "water_kg_value");
-    checkDynamic("fine-kg-container", "fine_kg_value");
-    checkDynamic("medium-kg-container", "medium_kg_value");
-    checkDynamic("coarse-kg-container", "coarse_kg_value");
-  } else {
-    checkDynamic("fine-ratio-container", "fine_ratio_value");
-    checkDynamic("medium-ratio-container", "medium_ratio_value");
-    checkDynamic("coarse-ratio-container", "coarse_ratio_value");
-    checkDynamic("water-ratio-container", "water_ratio_value");
-  }
+  (mode === "kg" ? kgRequired : ratioRequired).forEach(checkId);
 
   document.querySelectorAll("#admixtures-container .dynamic-row").forEach((row) => {
     const name = row.querySelector('input[name="adm_name"]');
@@ -419,28 +316,16 @@ const collectFormData = () => {
   });
 
   const cementContent = Number($("cementContent").value || 0);
+  const waterContent = Number($("waterContent").value || 0);
+  const fineAgg = Number($("fineAgg").value || 0);
+  const mediumAgg = Number($("mediumAgg").value || 0);
+  const coarseAgg = Number($("coarseAgg").value || 0);
 
-  // Dynamic material rows (keep both totals + row breakdowns)
-  const waterKgRows = readRows("water-kg-container", "water_kg_label", "water_kg_value");
-  const fineKgRows = readRows("fine-kg-container", "fine_kg_label", "fine_kg_value");
-  const mediumKgRows = readRows("medium-kg-container", "medium_kg_label", "medium_kg_value");
-  const coarseKgRows = readRows("coarse-kg-container", "coarse_kg_label", "coarse_kg_value");
-
-  const waterContent = sumContainerValues("water-kg-container", "water_kg_value") || 0;
-  const fineAgg = sumContainerValues("fine-kg-container", "fine_kg_value") || 0;
-  const mediumAgg = sumContainerValues("medium-kg-container", "medium_kg_value") || 0;
-  const coarseAgg = sumContainerValues("coarse-kg-container", "coarse_kg_value") || 0;
-
-  const ratioCement = Number($("ratioCement").value || 1);
-  const fineRatioRows = readRows("fine-ratio-container", "fine_ratio_label", "fine_ratio_value");
-  const mediumRatioRows = readRows("medium-ratio-container", "medium_ratio_label", "medium_ratio_value");
-  const coarseRatioRows = readRows("coarse-ratio-container", "coarse_ratio_label", "coarse_ratio_value");
-  const waterRatioRows = readRows("water-ratio-container", "water_ratio_label", "water_ratio_value");
-
-  const ratioFine = sumContainerValues("fine-ratio-container", "fine_ratio_value") || 0;
-  const ratioMedium = sumContainerValues("medium-ratio-container", "medium_ratio_value") || 0;
-  const ratioCoarse = sumContainerValues("coarse-ratio-container", "coarse_ratio_value") || 0;
-  const ratioWater = sumContainerValues("water-ratio-container", "water_ratio_value") || 0;
+  const ratioCement = Number($("ratioCement").value || 0);
+  const ratioFine = Number($("ratioFine").value || 0);
+  const ratioMedium = Number($("ratioMedium").value || 0);
+  const ratioCoarse = Number($("ratioCoarse").value || 0);
+  const ratioWater = Number($("ratioWater").value || 0);
 
   let wcRatio = 0;
   let mixRatioString = "";
@@ -479,22 +364,11 @@ const collectFormData = () => {
     mediumAgg,
     coarseAgg,
 
-    // Row breakdowns (useful for PDF + later review)
-    waterKgRows,
-    fineKgRows,
-    mediumKgRows,
-    coarseKgRows,
-
     ratioCement,
     ratioFine,
     ratioMedium,
     ratioCoarse,
     ratioWater,
-
-    fineRatioRows,
-    mediumRatioRows,
-    coarseRatioRows,
-    waterRatioRows,
 
     admixtures,
     scms,
@@ -514,24 +388,26 @@ const getLocalRecords = () => {
   }
 };
 
-const saveLocalRecords = (records) => localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+const saveLocalRecords = (list) =>
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 
 const saveLocal = (record) => {
   const list = getLocalRecords();
-  list.unshift(record);
+  list.push(record);
   saveLocalRecords(list);
 };
 
-/* ---------- Render saved records ---------- */
+/* ---------- Table render ---------- */
 
 const renderSavedRecords = () => {
   const list = getLocalRecords();
   const tbody = $("mixes-table-body");
   if (!tbody) return;
-
   tbody.innerHTML = "";
+
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="no-data">No mixes saved yet.</td></tr>`;
+    tbody.innerHTML =
+      '<tr><td colspan="6" class="no-data">No mixes saved yet.</td></tr>';
     return;
   }
 
@@ -560,6 +436,8 @@ const renderSavedRecords = () => {
 
 /* ---------- Load record into form ---------- */
 
+/* ---------- Load record into form ---------- */
+
 const loadRecordIntoForm = (r) => {
   const simpleFields = [
     ["studentName", "studentName"],
@@ -580,6 +458,7 @@ const loadRecordIntoForm = (r) => {
     const el = $(id);
     if (!el) return;
 
+    // handle legacy records that still used "organisationType"
     if (id === "programme") {
       el.value = r.programme ?? r.organisationType ?? "";
     } else {
@@ -631,74 +510,23 @@ const loadRecordIntoForm = (r) => {
 
   // Mode
   const mode = r.inputMode === "ratio" ? "ratio" : "kg";
-  setInputMode(mode);
+  if (mode === "kg") $("modeKg").checked = true;
+  else $("modeRatio").checked = true;
+  syncInputModeUI();
 
-  const loadQuantityGroup = (containerId, opts, rowsFallback, totalFallback) => {
-    const c = $(containerId);
-    if (!c) return;
-    c.innerHTML = "";
-    const rows =
-      Array.isArray(rowsFallback) && rowsFallback.length
-        ? rowsFallback
-        : [{ label: "", value: String(totalFallback ?? "") }];
-    rows.forEach((row) => c.appendChild(createQuantityRow(row, opts)));
-  };
-
-  // Fixed cement
+  // Kg inputs
   $("cementContent").value = r.cementContent ?? "";
+  $("waterContent").value = r.waterContent ?? "";
+  $("fineAgg").value = r.fineAgg ?? "";
+  $("mediumAgg").value = r.mediumAgg ?? "";
+  $("coarseAgg").value = r.coarseAgg ?? "";
+
+  // Ratio inputs
   $("ratioCement").value = r.ratioCement ?? "1";
-
-  // Kg dynamic groups
-  loadQuantityGroup(
-    "water-kg-container",
-    { itemLabel: "Type / Description", valueLabel: "Water (kg/m³)", valueStep: "0.1", labelName: "water_kg_label", valueName: "water_kg_value" },
-    r.waterKgRows,
-    r.waterContent
-  );
-  loadQuantityGroup(
-    "fine-kg-container",
-    { itemLabel: "Type / Description", valueLabel: "Fine Aggregate (kg/m³)", valueStep: "0.1", labelName: "fine_kg_label", valueName: "fine_kg_value" },
-    r.fineKgRows,
-    r.fineAgg
-  );
-  loadQuantityGroup(
-    "medium-kg-container",
-    { itemLabel: "Type / Description", valueLabel: "Medium Aggregate (kg/m³)", valueStep: "0.1", labelName: "medium_kg_label", valueName: "medium_kg_value" },
-    r.mediumKgRows,
-    r.mediumAgg
-  );
-  loadQuantityGroup(
-    "coarse-kg-container",
-    { itemLabel: "Type / Description", valueLabel: "Coarse Aggregate (kg/m³)", valueStep: "0.1", labelName: "coarse_kg_label", valueName: "coarse_kg_value" },
-    r.coarseKgRows,
-    r.coarseAgg
-  );
-
-  // Ratio dynamic groups
-  loadQuantityGroup(
-    "fine-ratio-container",
-    { itemLabel: "Type / Description", valueLabel: "Fine Aggregate (ratio)", valueStep: "0.01", labelName: "fine_ratio_label", valueName: "fine_ratio_value" },
-    r.fineRatioRows,
-    r.ratioFine
-  );
-  loadQuantityGroup(
-    "medium-ratio-container",
-    { itemLabel: "Type / Description", valueLabel: "Medium Aggregate (ratio)", valueStep: "0.01", labelName: "medium_ratio_label", valueName: "medium_ratio_value" },
-    r.mediumRatioRows,
-    r.ratioMedium
-  );
-  loadQuantityGroup(
-    "coarse-ratio-container",
-    { itemLabel: "Type / Description", valueLabel: "Coarse Aggregate (ratio)", valueStep: "0.01", labelName: "coarse_ratio_label", valueName: "coarse_ratio_value" },
-    r.coarseRatioRows,
-    r.ratioCoarse
-  );
-  loadQuantityGroup(
-    "water-ratio-container",
-    { itemLabel: "Type / Description", valueLabel: "Water (ratio)", valueStep: "0.01", labelName: "water_ratio_label", valueName: "water_ratio_value" },
-    r.waterRatioRows,
-    r.ratioWater
-  );
+  $("ratioFine").value = r.ratioFine ?? "";
+  $("ratioMedium").value = r.ratioMedium ?? "";
+  $("ratioCoarse").value = r.ratioCoarse ?? "";
+  $("ratioWater").value = r.ratioWater ?? "";
 
   if (mode === "kg") {
     updateWCRatioFromKg();
@@ -723,10 +551,302 @@ const loadRecordIntoForm = (r) => {
 };
 
 /* ---------- PDF ---------- */
-/* (Your existing PDF generation continues here — unchanged except it now uses totals) */
 
-/* ---------- Export CSV / Submit / Reset / Modal ---------- */
-/* (Your existing functions remain compatible since totals are still stored as waterContent/fineAgg/...) */
+const generatePDF = async (data) => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "A4" });
+
+  const pageW = 595;
+  const margin = 32;
+  let y = 40;
+
+  if (logoImageDataUrl) doc.addImage(logoImageDataUrl, "PNG", margin, y, 60, 60);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("CONCRETE LABORATORY – UNIVERSITY OF LAGOS", margin + 80, y + 20);
+  doc.setFontSize(10);
+  doc.text("Research Mix Cube Test Intake Form", margin + 80, y + 38);
+  y += 80;
+
+  if (data.recordId) {
+    doc.setFont("helvetica", "bold");
+    doc.text(`Application No: ${data.recordId}`, margin, y);
+    y += 18;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Student & Research Details", margin, y);
+  y += 16;
+  doc.setFont("helvetica", "normal");
+  [
+    `Student Name: ${data.studentName}`,
+    `Matriculation Number: ${data.matricNumber}`,
+    `Programme: ${data.programme}`,
+    `Supervisor: ${data.supervisorName}`,
+    `Student Phone: ${data.studentPhone}`,
+    `Project / Thesis Title: ${data.thesisTitle}`,
+  ].forEach((line) => {
+    doc.text(line, margin, y);
+    y += 14;
+  });
+  y += 6;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Test Information", margin, y);
+  y += 16;
+  doc.setFont("helvetica", "normal");
+  [
+    `Crushing Date: ${data.crushDate}`,
+    `Concrete Type: ${data.concreteType}`,
+    `Cement Type: ${data.cementType}`,
+    `Slump / Flow (mm): ${data.slump}`,
+    `Age at Testing (days): ${data.ageDays}`,
+    `Number of Cubes: ${data.cubesCount}`,
+    `Target Strength (MPa): ${data.targetStrength}`,
+  ].forEach((line) => {
+    doc.text(line, margin, y);
+    y += 14;
+  });
+  y += 6;
+
+  doc.setFont("helvetica", "bold");
+  doc.text(
+    data.inputMode === "ratio"
+      ? "Material Quantities (Ratios by Cement)"
+      : "Material Quantities (kg/m³)",
+    margin,
+    y
+  );
+  y += 16;
+  doc.setFont("helvetica", "normal");
+
+  if (data.inputMode === "kg") {
+    [
+      `Cement: ${data.cementContent}`,
+      `Water: ${data.waterContent}`,
+      `Fine Aggregate: ${data.fineAgg}`,
+      `Medium Aggregate: ${data.mediumAgg}`,
+      `Coarse Aggregate: ${data.coarseAgg}`,
+    ].forEach((line) => {
+      doc.text(line, margin, y);
+      y += 14;
+    });
+  } else {
+    [
+      `Cement: ${data.ratioCement}`,
+      `Fine Aggregate: ${data.ratioFine}`,
+      `Medium Aggregate: ${data.ratioMedium}`,
+      `Coarse Aggregate: ${data.ratioCoarse}`,
+      `Water: ${data.ratioWater}`,
+    ].forEach((line) => {
+      doc.text(line, margin, y);
+      y += 14;
+    });
+  }
+
+  const wcRatio =
+    typeof data.wcRatio === "number" && !isNaN(data.wcRatio)
+      ? data.wcRatio.toFixed(2)
+      : String(data.wcRatio || "");
+  doc.text(`W/C Ratio: ${wcRatio}`, margin, y);
+  y += 14;
+  doc.text(`Mix Ratio: ${data.mixRatioString || ""}`, margin, y);
+  y += 20;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Admixtures", margin, y);
+  y += 16;
+  doc.setFont("helvetica", "normal");
+  if (data.admixtures?.length) {
+    data.admixtures.forEach((a, i) => {
+      doc.text(`${i + 1}. ${a.name || ""} | ${a.dosage || ""} L/100kg`, margin, y);
+      y += 14;
+    });
+  } else {
+    doc.text("None", margin, y);
+    y += 14;
+  }
+  y += 6;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("SCMs", margin, y);
+  y += 16;
+  doc.setFont("helvetica", "normal");
+  if (data.scms?.length) {
+    data.scms.forEach((s, i) => {
+      doc.text(`${i + 1}. ${s.name || ""} | ${s.percent || ""}%`, margin, y);
+      y += 14;
+    });
+  } else {
+    doc.text("None", margin, y);
+    y += 14;
+  }
+  y += 6;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Notes", margin, y);
+  y += 16;
+  doc.setFont("helvetica", "normal");
+  const notesLines = doc.splitTextToSize(
+    data.notes || "",
+    pageW - margin * 2
+  );
+  doc.text(notesLines, margin, y);
+
+  const filename = `${sanitizeFilename(
+    data.studentName || "Student"
+  )}_${sanitizeFilename(data.thesisTitle || "ResearchMix")}.pdf`;
+  doc.save(filename);
+};
+
+/* ---------- CSV & clear ---------- */
+
+const exportCsv = () => {
+  const list = getLocalRecords();
+  if (!list.length) return;
+
+  const headers = [
+    "RecordId",
+    "InputMode",
+    "StudentName",
+    "MatricNumber",
+    "StudentPhone",
+    "Programme",
+    "SupervisorName",
+    "ThesisTitle",
+    "CrushDate",
+    "ConcreteType",
+    "CementType",
+    "Slump",
+    "AgeDays",
+    "CubesCount",
+    "TargetStrength",
+    "CementContent",
+    "WaterContent",
+    "FineAgg",
+    "MediumAgg",
+    "CoarseAgg",
+    "RatioCement",
+    "RatioFine",
+    "RatioMedium",
+    "RatioCoarse",
+    "RatioWater",
+    "WCRatio",
+    "MixRatio",
+    "Notes",
+    "SavedAt",
+  ];
+
+  const lines = [headers.join(",")];
+
+  list.forEach((r) => {
+    const row = [
+      r.recordId || "",
+      r.inputMode || "",
+      r.studentName || "",
+      r.matricNumber || "",
+      r.studentPhone || "",
+      r.programme || "",
+      r.supervisorName || "",
+      r.thesisTitle || "",
+      r.crushDate || "",
+      r.concreteType || "",
+      r.cementType || "",
+      r.slump ?? "",
+      r.ageDays ?? "",
+      r.cubesCount ?? "",
+      r.targetStrength ?? "",
+      r.cementContent ?? "",
+      r.waterContent ?? "",
+      r.fineAgg ?? "",
+      r.mediumAgg ?? "",
+      r.coarseAgg ?? "",
+      r.ratioCement ?? "",
+      r.ratioFine ?? "",
+      r.ratioMedium ?? "",
+      r.ratioCoarse ?? "",
+      r.ratioWater ?? "",
+      r.wcRatio ?? "",
+      r.mixRatioString || "",
+      (r.notes || "").replace(/\n/g, " "),
+      r.savedAt || "",
+    ].map((v) => `"${String(v).replace(/"/g, '""')}"`);
+
+    lines.push(row.join(","));
+  });
+
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "research_mix_records.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const clearAllRecords = () => {
+  saveLocalRecords([]);
+  renderSavedRecords();
+  setStatusLine("All saved records cleared.", "info");
+};
+
+/* ---------- Submit ---------- */
+
+const submitForm = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+
+  setStatusLine("Submitting...", "info");
+  const data = collectFormData();
+
+  if (!logoImageDataUrl) logoImageDataUrl = await loadImageAsDataURL("unilag-logo.png");
+
+  let apiResult = null;
+  try {
+    const res = await fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) apiResult = await res.json();
+    else console.error("API error", res.status);
+  } catch (err) {
+    console.error("Network error submitting to API:", err);
+  }
+
+  if (apiResult?.success) {
+    if (typeof apiResult.wcRatio !== "undefined") {
+      data.wcRatio = apiResult.wcRatio;
+      if (!isNaN(apiResult.wcRatio))
+        $("wcRatioValue").textContent = apiResult.wcRatio.toFixed(2);
+    }
+    if (apiResult.mixRatioString) {
+      data.mixRatioString = apiResult.mixRatioString;
+      $("mixRatioValue").textContent = apiResult.mixRatioString;
+    }
+
+    data.recordId = apiResult.recordId;
+    const modal = $("appModal");
+    const modalNumber = $("modalNumber");
+    if (modal && modalNumber) {
+      modalNumber.textContent = apiResult.recordId;
+      modal.classList.remove("hidden");
+    }
+    setStatusLine("Submitted and saved locally.", "success");
+  } else {
+    setStatusLine(
+      "Saved locally and PDF generated, but could not submit to server.",
+      "error"
+    );
+  }
+
+  const localRecord = { ...data, recordId: data.recordId || null, savedAt: new Date().toISOString() };
+  saveLocal(localRecord);
+  renderSavedRecords();
+
+  await generatePDF(data);
+};
 
 /* ---------- Reset ---------- */
 
@@ -738,43 +858,25 @@ const resetFormFields = () => {
   $("ratioCement").value = "1";
   $("wcRatioValue").textContent = "0.00";
   $("mixRatioValue").textContent = "–";
-  setInputMode("kg");
+  syncInputModeUI();
   syncConcreteTypeOther();
   syncCementTypeOther();
-
-  // Clear dynamic material groups
-  [
-    "water-kg-container",
-    "fine-kg-container",
-    "medium-kg-container",
-    "coarse-kg-container",
-    "fine-ratio-container",
-    "medium-ratio-container",
-    "coarse-ratio-container",
-    "water-ratio-container",
-  ].forEach((id) => {
-    const c = $(id);
-    if (c) c.innerHTML = "";
-  });
-
-  // Seed a single row in each material group
-  [
-    "add-water-kg-btn",
-    "add-fine-kg-btn",
-    "add-medium-kg-btn",
-    "add-coarse-kg-btn",
-    "add-fine-ratio-btn",
-    "add-medium-ratio-btn",
-    "add-coarse-ratio-btn",
-    "add-water-ratio-btn",
-  ].forEach((btnId) => {
-    const b = $(btnId);
-    if (b) b.click();
-  });
-
   $("admixtures-container").innerHTML = "";
   $("scms-container").innerHTML = "";
   setStatusLine("", "info");
+};
+
+/* ---------- Modal ---------- */
+
+const initModal = () => {
+  const modal = $("appModal");
+  const closeBtn = $("modalClose");
+  if (!modal || !closeBtn) return;
+  const close = () => modal.classList.add("hidden");
+  closeBtn.addEventListener("click", close);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
+  });
 };
 
 /* ---------- Init ---------- */
@@ -786,107 +888,49 @@ document.addEventListener("DOMContentLoaded", () => {
   setToday($("crushDate"));
   loadImageAsDataURL("unilag-logo.png").then((d) => (logoImageDataUrl = d));
 
-  $("add-admixture-btn").onclick = () => $("admixtures-container").appendChild(createAdmixtureRow());
-  $("add-scm-btn").onclick = () => $("scms-container").appendChild(createScmRow());
+  $("add-admixture-btn").onclick = () =>
+    $("admixtures-container").appendChild(createAdmixtureRow());
+  $("add-scm-btn").onclick = () =>
+    $("scms-container").appendChild(createScmRow());
 
-  // Mode tabs
-  $("modeKg").addEventListener("click", () => setInputMode("kg"));
-  $("modeRatio").addEventListener("click", () => setInputMode("ratio"));
-  setInputMode("kg");
+  $("modeKg").addEventListener("change", syncInputModeUI);
+  $("modeRatio").addEventListener("change", syncInputModeUI);
+  syncInputModeUI();
 
   $("concreteType").addEventListener("change", syncConcreteTypeOther);
   $("cementType").addEventListener("change", syncCementTypeOther);
   syncConcreteTypeOther();
   syncCementTypeOther();
 
-  // ----- Dynamic material rows: add buttons + default rows
-  const bindAdd = (btnId, containerId, opts) => {
-    const btn = $(btnId);
-    const c = $(containerId);
-    if (!btn || !c) return;
-    btn.onclick = () => {
-      const row = createQuantityRow({}, opts);
-      // Keep ratios fresh as the user types
-      row.querySelectorAll("input").forEach((i) => {
-        i.addEventListener("input", () => {
-          if (getInputMode() === "kg") {
-            updateWCRatioFromKg();
-            updateMixRatioFromKg();
-          } else {
-            updateWcAndMixFromRatio();
-          }
-        });
-      });
-      c.appendChild(row);
-    };
-    // Create an initial row
-    btn.click();
-  };
+  ["cementContent", "waterContent"].forEach((id) =>
+    $(id).addEventListener("input", () => {
+      updateWCRatioFromKg();
+      updateMixRatioFromKg();
+    })
+  );
+  ["fineAgg", "mediumAgg", "coarseAgg"].forEach((id) =>
+    $(id).addEventListener("input", updateMixRatioFromKg)
+  );
 
-  bindAdd("add-water-kg-btn", "water-kg-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Water (kg/m³)",
-    valueStep: "0.1",
-    labelName: "water_kg_label",
-    valueName: "water_kg_value",
-  });
-  bindAdd("add-fine-kg-btn", "fine-kg-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Fine Aggregate (kg/m³)",
-    valueStep: "0.1",
-    labelName: "fine_kg_label",
-    valueName: "fine_kg_value",
-  });
-  bindAdd("add-medium-kg-btn", "medium-kg-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Medium Aggregate (kg/m³)",
-    valueStep: "0.1",
-    labelName: "medium_kg_label",
-    valueName: "medium_kg_value",
-  });
-  bindAdd("add-coarse-kg-btn", "coarse-kg-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Coarse Aggregate (kg/m³)",
-    valueStep: "0.1",
-    labelName: "coarse_kg_label",
-    valueName: "coarse_kg_value",
+  ["ratioCement", "ratioFine", "ratioMedium", "ratioCoarse", "ratioWater"].forEach(
+    (id) => $(id).addEventListener("input", updateWcAndMixFromRatio)
+  );
+
+  $("mix-form").addEventListener("submit", submitForm);
+  $("reset-form-btn").addEventListener("click", resetFormFields);
+  $("export-csv-btn").addEventListener("click", exportCsv);
+  $("clear-all-btn").addEventListener("click", clearAllRecords);
+
+  $("mixes-table-body").addEventListener("click", (e) => {
+    const tr = e.target.closest("tr");
+    if (!tr || tr.classList.contains("no-data")) return;
+    const idx = tr.dataset.index;
+    if (idx === undefined) return;
+    const record = getLocalRecords()[idx];
+    if (record) loadRecordIntoForm(record);
   });
 
-  bindAdd("add-fine-ratio-btn", "fine-ratio-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Fine Aggregate (ratio)",
-    valueStep: "0.01",
-    labelName: "fine_ratio_label",
-    valueName: "fine_ratio_value",
-  });
-  bindAdd("add-medium-ratio-btn", "medium-ratio-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Medium Aggregate (ratio)",
-    valueStep: "0.01",
-    labelName: "medium_ratio_label",
-    valueName: "medium_ratio_value",
-  });
-  bindAdd("add-coarse-ratio-btn", "coarse-ratio-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Coarse Aggregate (ratio)",
-    valueStep: "0.01",
-    labelName: "coarse_ratio_label",
-    valueName: "coarse_ratio_value",
-  });
-  bindAdd("add-water-ratio-btn", "water-ratio-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Water (ratio)",
-    valueStep: "0.01",
-    labelName: "water_ratio_label",
-    valueName: "water_ratio_value",
-  });
+  initModal();
+  renderSavedRecords();
 
-  // Cement changes affect W/C + mix
-  $("cementContent").addEventListener("input", () => {
-    updateWCRatioFromKg();
-    updateMixRatioFromKg();
-  });
-
-  // Hook the rest of your existing buttons (submit/export/clear/etc.)
-  $("mix-form").addEventListener("submit", (e) => e.preventDefault()); // replace with your submitForm if needed
 });
