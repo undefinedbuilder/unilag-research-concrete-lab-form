@@ -192,28 +192,19 @@
           <!-- MIX INPUT MODE -->
           <h4 class="section-title">Mix Input Mode</h4>
 
-          <!-- Segmented control (same interaction pattern as the deployed client form) -->
-          <div class="mode-switch" role="tablist" aria-label="Mix Input Mode">
-            <button
-              type="button"
-              class="mode-tab is-active"
-              id="modeKg"
-              data-mode="kg"
-              role="tab"
-              aria-selected="true"
-            >
-              Input Material Quantities in kg/m³
-            </button>
-            <button
-              type="button"
-              class="mode-tab"
-              id="modeRatio"
-              data-mode="ratio"
-              role="tab"
-              aria-selected="false"
-            >
-              Input Material Quantities in Ratios
-            </button>
+          <div class="grid two">
+            <label>
+              <span class="label-line">
+                <input type="radio" name="inputMode" value="kg" id="modeKg" checked />
+                &nbsp; Input Material Quantities in kg/m³
+              </span>
+            </label>
+            <label>
+              <span class="label-line">
+                <input type="radio" name="inputMode" value="ratio" id="modeRatio" />
+                &nbsp; Input Material Quantities in Ratios
+              </span>
+            </label>
           </div>
 
           <!-- MATERIAL QUANTITIES (KG/M3) -->
@@ -221,46 +212,40 @@
 
           <div id="kgInputs">
             <div class="grid two">
-              <!-- Cement stays fixed (not dynamic) -->
               <label>
                 <span class="label-line">
                   Cement (kg/m³) <span class="required-asterisk">*</span>
                 </span>
                 <input type="number" min="0" step="0.1" id="cementContent" />
               </label>
-            </div>
 
-            <!-- All other material quantities are dynamic rows, styled exactly like Admixtures/SCMs -->
-            <div class="material-block">
-              <div class="material-head">
-                <div class="material-title">Water (kg/m³) <span class="required-asterisk">*</span></div>
-                <button type="button" id="add-water-kg-btn" data-add-for="water-kg-container" class="btn-primary small">+ Add Row</button>
-              </div>
-              <div id="water-kg-container" class="dynamic-group"></div>
-            </div>
+              <label>
+                <span class="label-line">
+                  Water (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="waterContent" />
+              </label>
 
-            <div class="material-block">
-              <div class="material-head">
-                <div class="material-title">Fine Aggregate (kg/m³) <span class="required-asterisk">*</span></div>
-                <button type="button" id="add-fine-kg-btn" data-add-for="fine-kg-container" class="btn-primary small">+ Add Row</button>
-              </div>
-              <div id="fine-kg-container" class="dynamic-group"></div>
-            </div>
+              <label>
+                <span class="label-line">
+                  Fine Aggregate (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="fineAgg" />
+              </label>
 
-            <div class="material-block">
-              <div class="material-head">
-                <div class="material-title">Medium Aggregate (kg/m³) <span class="required-asterisk">*</span></div>
-                <button type="button" id="add-medium-kg-btn" data-add-for="medium-kg-container" class="btn-primary small">+ Add Row</button>
-              </div>
-              <div id="medium-kg-container" class="dynamic-group"></div>
-            </div>
+              <label>
+                <span class="label-line">
+                  Medium Aggregate (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="mediumAgg" />
+              </label>
 
-            <div class="material-block">
-              <div class="material-head">
-                <div class="material-title">Coarse Aggregate (kg/m³) <span class="required-asterisk">*</span></div>
-                <button type="button" id="add-coarse-kg-btn" data-add-for="coarse-kg-container" class="btn-primary small">+ Add Row</button>
-              </div>
-              <div id="coarse-kg-container" class="dynamic-group"></div>
+              <label>
+                <span class="label-line">
+                  Coarse Aggregate (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="coarseAgg" />
+              </label>
             </div>
           </div>
 
@@ -269,45 +254,40 @@
 
           <div id="ratioInputs" style="display: none;">
             <div class="grid two">
-              <!-- Cement stays fixed (base) -->
               <label>
                 <span class="label-line">
-                  Cement (base) <span class="required-asterisk">*</span>
+                  Cement <span class="required-asterisk">*</span>
                 </span>
-                <input type="number" min="0" step="0.01" id="ratioCement" value="1" readonly />
+                <input type="number" min="0" step="0.01" id="ratioCement" value="1" />
               </label>
-            </div>
 
-            <div class="material-block">
-              <div class="material-head">
-                <div class="material-title">Fine Aggregate (ratio) <span class="required-asterisk">*</span></div>
-                <button type="button" id="add-fine-ratio-btn" data-add-for="fine-ratio-container" class="btn-primary small">+ Add Row</button>
-              </div>
-              <div id="fine-ratio-container" class="dynamic-group"></div>
-            </div>
+              <label>
+                <span class="label-line">
+                  Fine Aggregate <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioFine" />
+              </label>
 
-            <div class="material-block">
-              <div class="material-head">
-                <div class="material-title">Medium Aggregate (ratio) <span class="required-asterisk">*</span></div>
-                <button type="button" id="add-medium-ratio-btn" data-add-for="medium-ratio-container" class="btn-primary small">+ Add Row</button>
-              </div>
-              <div id="medium-ratio-container" class="dynamic-group"></div>
-            </div>
+              <label>
+                <span class="label-line">
+                  Medium Aggregate <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioMedium" />
+              </label>
 
-            <div class="material-block">
-              <div class="material-head">
-                <div class="material-title">Coarse Aggregate (ratio) <span class="required-asterisk">*</span></div>
-                <button type="button" id="add-coarse-ratio-btn" data-add-for="coarse-ratio-container" class="btn-primary small">+ Add Row</button>
-              </div>
-              <div id="coarse-ratio-container" class="dynamic-group"></div>
-            </div>
+              <label>
+                <span class="label-line">
+                  Coarse Aggregate <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioCoarse" />
+              </label>
 
-            <div class="material-block">
-              <div class="material-head">
-                <div class="material-title">Water (ratio) <span class="required-asterisk">*</span></div>
-                <button type="button" id="add-water-ratio-btn" data-add-for="water-ratio-container" class="btn-primary small">+ Add Row</button>
-              </div>
-              <div id="water-ratio-container" class="dynamic-group"></div>
+              <label>
+                <span class="label-line">
+                  Water <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.01" id="ratioWater" />
+              </label>
             </div>
           </div>
 
