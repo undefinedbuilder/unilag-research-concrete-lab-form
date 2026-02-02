@@ -226,22 +226,15 @@
                 </span>
                 <input type="number" min="0" step="0.1" id="waterContent" />
               </label>
-
-              <label>
-                <span class="label-line">
-                  Medium Aggregate (kg/m³) <span class="required-asterisk">*</span>
-                </span>
-                <input type="number" min="0" step="0.1" id="mediumAgg" />
-              </label>
             </div>
 
-            <p class="subtle">Fine aggregate breakdown (enter one or more fine aggregates).</p>
+            <h4 class="section-title">Fine Aggregate</h4>
             <div id="fine-kg-container" class="dynamic-group"></div>
             <button type="button" id="add-fine-kg-btn" class="btn-primary small">
               + Add Fine Aggregate
             </button>
 
-            <p class="subtle">Coarse aggregate breakdown (enter one or more coarse aggregates).</p>
+            <h4 class="section-title">Coarse Aggregate</h4>
             <div id="coarse-kg-container" class="dynamic-group"></div>
             <button type="button" id="add-coarse-kg-btn" class="btn-primary small">
               + Add Coarse Aggregate
@@ -266,26 +259,19 @@
 
               <label>
                 <span class="label-line">
-                  Medium Aggregate <span class="required-asterisk">*</span>
-                </span>
-                <input type="number" min="0" step="0.01" id="ratioMedium" />
-              </label>
-
-              <label>
-                <span class="label-line">
                   Water (W/C) <span class="required-asterisk">*</span>
                 </span>
                 <input type="number" min="0" step="0.01" id="ratioWater" />
               </label>
             </div>
 
-            <p class="subtle">Fine aggregate breakdown (enter one or more fine aggregates).</p>
+            <h4 class="section-title">Fine Aggregate</h4>
             <div id="fine-ratio-container" class="dynamic-group"></div>
             <button type="button" id="add-fine-ratio-btn" class="btn-primary small">
               + Add Fine Aggregate (Ratio)
             </button>
 
-            <p class="subtle">Coarse aggregate breakdown (enter one or more coarse aggregates).</p>
+            <h4 class="section-title">Coarse Aggregate</h4>
             <div id="coarse-ratio-container" class="dynamic-group"></div>
             <button type="button" id="add-coarse-ratio-btn" class="btn-primary small">
               + Add Coarse Aggregate (Ratio)
@@ -390,18 +376,21 @@
         </div>
         <div class="modal-body">
           <div class="modal-number" id="modalNumber">UNILAG-CL-K000001</div>
-          <div class="modal-note">
-            Please keep this number safe and quote it in all discussions with the Concrete Laboratory.
+          <div class="modal-actions">
+            <button id="modalCopy" type="button" class="btn-primary small">Copy</button>
+            <button id="modalOk" type="button" class="btn-secondary">OK</button>
           </div>
+          <p class="subtle small-note">Your application number has been generated.</p>
         </div>
       </div>
     </div>
 
     <!-- FOOTER -->
     <footer class="footer">
-      © <span id="year"></span> Designed by Jesuto Ilugbo for The Concrete Laboratory, University of Lagos.
+      <p>
+        © <span id="year"></span> University of Lagos – Department of Civil &amp; Environmental Engineering
+      </p>
     </footer>
   </main>
 </body>
-
 </html>
