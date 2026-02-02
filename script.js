@@ -94,111 +94,262 @@ const createScmRow = (data = {}) => {
 };
 
 
-/* ---------- Dynamic rows (kg materials) ---------- */
+/* ---------- Dynamic rows (kg fine/coarse aggregates) ---------- */
 
-const KG_MATERIAL_TYPES = [
-  { value: "water", label: "Water (kg/m³)", totalId: "waterContent" },
-  { value: "fine", label: "Fine Aggregate (kg/m³)", totalId: "fineAgg" },
-  { value: "medium", label: "Medium Aggregate (kg/m³)", totalId: "mediumAgg" },
-  { value: "coarse", label: "Coarse Aggregate (kg/m³)", totalId: "coarseAgg" },
-];
-
-const createKgMaterialRow = (data = {}) => {
+const createFineKgRow = (data = {}) => {
   const row = document.createElement("div");
-  row.className = "dynamic-row kg-material-row";
-
-  const optionsHtml = KG_MATERIAL_TYPES.map((t) => {
-    const selected = (data.type || "") === t.value ? "selected" : "";
-    return `<option value="${t.value}" ${selected}>${t.label}</option>`;
-  }).join("");
-
+  row.className = "dynamic-row fine-kg-row";
   row.innerHTML = `
     <label>
       <span class="label-line">
-        Material <span class="required-asterisk">*</span>
+        Fine Aggregate Name <span class="required-asterisk">*</span>
       </span>
-      <select name="kg_type">
-        ${optionsHtml}
-      </select>
+      <input type="text" name="fine_name" value="${data.name || ""}">
     </label>
-
     <label>
       <span class="label-line">
-        Quantity <span class="required-asterisk">*</span>
+        Quantity (kg/m³) <span class="required-asterisk">*</span>
       </span>
-      <input type="number" min="0" step="0.1" name="kg_qty" value="${data.qty ?? ""}">
+      <input type="number" min="0" step="0.1" name="fine_qty" value="${data.qty ?? ""}">
     </label>
-
     <button type="button" class="remove-row-btn" aria-label="Remove row">×</button>
   `;
 
-  const onChange = () => syncKgMaterialTotals();
-  row.querySelector('select[name="kg_type"]').addEventListener("change", onChange);
-  row.querySelector('input[name="kg_qty"]').addEventListener("input", onChange);
+  const onChange = () => syncFineKgTotal();
+  row.querySelector('input[name="fine_name"]').addEventListener("input", onChange);
+  row.querySelector('input[name="fine_qty"]').addEventListener("input", onChange);
 
   row.querySelector(".remove-row-btn").onclick = () => {
     row.remove();
-    syncKgMaterialTotals();
+    syncFineKgTotal();
   };
 
   return row;
 };
 
-const ensureDefaultKgMaterialRows = () => {
-  const c = $("kg-materials-container");
-  if (!c) return;
-  if (c.querySelectorAll(".dynamic-row").length) return;
+const createCoarseKgRow = (data = {}) => {
+  const row = document.createElement("div");
+  row.className = "dynamic-row coarse-kg-row";
+  row.innerHTML = `
+    <label>
+      <span class="label-line">
+        Coarse Aggregate Name <span class="required-asterisk">*</span>
+      </span>
+      <input type="text" name="coarse_name" value="${data.name || ""}">
+    </label>
+    <label>
+      <span class="label-line">
+        Quantity (kg/m³) <span class="required-asterisk">*</span>
+      </span>
+      <input type="number" min="0" step="0.1" name="coarse_qty" value="${data.qty ?? ""}">
+    </label>
+    <button type="button" class="remove-row-btn" aria-label="Remove row">×</button>
+  `;
 
-  // one row each, blank quantity by default
-  KG_MATERIAL_TYPES.forEach((t) => c.appendChild(createKgMaterialRow({ type: t.value })));
-  syncKgMaterialTotals();
+  const onChange = () => syncCoarseKgTotal();
+  row.querySelector('input[name="coarse_name"]').addEventListener("input", onChange);
+  row.querySelector('input[name="coarse_qty"]').addEventListener("input", onChange);
+
+  row.querySelector(".remove-row-btn").onclick = () => {
+    row.remove();
+    syncCoarseKgTotal();
+  };
+
+  return row;
 };
 
-const syncKgMaterialTotals = () => {
-  const c = $("kg-materials-container");
-  if (!c) return;
+const ensureDefaultAggregateRows = () => {
+  const fineC = $("fine-kg-container");
+  const coarseC = $("coarse-kg-container");
+  const fineR = $("fine-ratio-container");
+  const coarseR = $("coarse-ratio-container");
 
-  // reset totals
-  KG_MATERIAL_TYPES.forEach((t) => {
-    const totalEl = $(t.totalId);
-    if (totalEl) totalEl.value = "";
-  });
+  if (fineC && !fineC.querySelector(".dynamic-row")) fineC.appendChild(createFineKgRow());
+  if (coarseC && !coarseC.querySelector(".dynamic-row"))
+    coarseC.appendChild(createCoarseKgRow());
 
-  const totals = { water: 0, fine: 0, medium: 0, coarse: 0 };
-  const seen = { water: false, fine: false, medium: false, coarse: false };
+  if (fineR && !fineR.querySelector(".dynamic-row")) fineR.appendChild(createFineRatioRow());
+  if (coarseR && !coarseR.querySelector(".dynamic-row"))
+    coarseR.appendChild(createCoarseRatioRow());
+
+  syncFineKgTotal();
+  syncCoarseKgTotal();
+  syncFineRatioTotal();
+  syncCoarseRatioTotal();
+};
+
+const syncFineKgTotal = () => {
+  const c = $("fine-kg-container");
+  const totalEl = $("fineAgg");
+  if (!c || !totalEl) return;
+
+  let seen = false;
+  let anyBlank = false;
+  let total = 0;
 
   c.querySelectorAll(".dynamic-row").forEach((row) => {
-    const type = row.querySelector('select[name="kg_type"]')?.value;
-    const qtyRaw = row.querySelector('input[name="kg_qty"]')?.value;
+    const name = row.querySelector('input[name="fine_name"]')?.value.trim() || "";
+    const qtyRaw = row.querySelector('input[name="fine_qty"]')?.value;
 
-    if (!type) return;
+    if (name || qtyRaw !== "") seen = true;
 
-    // Track presence even if qty is blank (validation will handle)
-    if (Object.prototype.hasOwnProperty.call(seen, type)) seen[type] = true;
+    if (!name || qtyRaw === "") anyBlank = true;
 
     const qty = parseFloat(qtyRaw);
-    if (!isNaN(qty) && Object.prototype.hasOwnProperty.call(totals, type)) {
-      totals[type] += qty;
-    }
+    if (!isNaN(qty)) total += qty;
   });
 
-  // push totals into hidden inputs (as strings), keeping "" if type is missing
-  KG_MATERIAL_TYPES.forEach((t) => {
-    const totalEl = $(t.totalId);
-    if (!totalEl) return;
+  if (!seen || anyBlank) totalEl.value = "";
+  else totalEl.value = String(total);
 
-    if (!seen[t.value]) {
-      totalEl.value = ""; // missing category
-    } else {
-      // If all rows blank/NaN, totals[type] will be 0; keep "0" so validation can pass when user intentionally enters 0
-      totalEl.value = String(totals[t.value]);
-    }
-  });
-
-  // refresh derived boxes
   updateWCRatioFromKg();
   updateMixRatioFromKg();
 };
+
+const syncCoarseKgTotal = () => {
+  const c = $("coarse-kg-container");
+  const totalEl = $("coarseAgg");
+  if (!c || !totalEl) return;
+
+  let seen = false;
+  let anyBlank = false;
+  let total = 0;
+
+  c.querySelectorAll(".dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="coarse_name"]')?.value.trim() || "";
+    const qtyRaw = row.querySelector('input[name="coarse_qty"]')?.value;
+
+    if (name || qtyRaw !== "") seen = true;
+
+    if (!name || qtyRaw === "") anyBlank = true;
+
+    const qty = parseFloat(qtyRaw);
+    if (!isNaN(qty)) total += qty;
+  });
+
+  if (!seen || anyBlank) totalEl.value = "";
+  else totalEl.value = String(total);
+
+  updateWCRatioFromKg();
+  updateMixRatioFromKg();
+};
+
+/* ---------- Dynamic rows (ratio fine/coarse aggregates) ---------- */
+
+const createFineRatioRow = (data = {}) => {
+  const row = document.createElement("div");
+  row.className = "dynamic-row fine-ratio-row";
+  row.innerHTML = `
+    <label>
+      <span class="label-line">
+        Fine Aggregate Name <span class="required-asterisk">*</span>
+      </span>
+      <input type="text" name="rfine_name" value="${data.name || ""}">
+    </label>
+    <label>
+      <span class="label-line">
+        Ratio (by Cement) <span class="required-asterisk">*</span>
+      </span>
+      <input type="number" min="0" step="0.01" name="rfine_qty" value="${data.qty ?? ""}">
+    </label>
+    <button type="button" class="remove-row-btn" aria-label="Remove row">×</button>
+  `;
+
+  const onChange = () => syncFineRatioTotal();
+  row.querySelector('input[name="rfine_name"]').addEventListener("input", onChange);
+  row.querySelector('input[name="rfine_qty"]').addEventListener("input", onChange);
+
+  row.querySelector(".remove-row-btn").onclick = () => {
+    row.remove();
+    syncFineRatioTotal();
+  };
+
+  return row;
+};
+
+const createCoarseRatioRow = (data = {}) => {
+  const row = document.createElement("div");
+  row.className = "dynamic-row coarse-ratio-row";
+  row.innerHTML = `
+    <label>
+      <span class="label-line">
+        Coarse Aggregate Name <span class="required-asterisk">*</span>
+      </span>
+      <input type="text" name="rcoarse_name" value="${data.name || ""}">
+    </label>
+    <label>
+      <span class="label-line">
+        Ratio (by Cement) <span class="required-asterisk">*</span>
+      </span>
+      <input type="number" min="0" step="0.01" name="rcoarse_qty" value="${data.qty ?? ""}">
+    </label>
+    <button type="button" class="remove-row-btn" aria-label="Remove row">×</button>
+  `;
+
+  const onChange = () => syncCoarseRatioTotal();
+  row.querySelector('input[name="rcoarse_name"]').addEventListener("input", onChange);
+  row.querySelector('input[name="rcoarse_qty"]').addEventListener("input", onChange);
+
+  row.querySelector(".remove-row-btn").onclick = () => {
+    row.remove();
+    syncCoarseRatioTotal();
+  };
+
+  return row;
+};
+
+const syncFineRatioTotal = () => {
+  const c = $("fine-ratio-container");
+  const totalEl = $("ratioFine");
+  if (!c || !totalEl) return;
+
+  let seen = false;
+  let anyBlank = false;
+  let total = 0;
+
+  c.querySelectorAll(".dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="rfine_name"]')?.value.trim() || "";
+    const qtyRaw = row.querySelector('input[name="rfine_qty"]')?.value;
+
+    if (name || qtyRaw !== "") seen = true;
+    if (!name || qtyRaw === "") anyBlank = true;
+
+    const qty = parseFloat(qtyRaw);
+    if (!isNaN(qty)) total += qty;
+  });
+
+  if (!seen || anyBlank) totalEl.value = "";
+  else totalEl.value = String(total);
+
+  updateWcAndMixFromRatio();
+};
+
+const syncCoarseRatioTotal = () => {
+  const c = $("coarse-ratio-container");
+  const totalEl = $("ratioCoarse");
+  if (!c || !totalEl) return;
+
+  let seen = false;
+  let anyBlank = false;
+  let total = 0;
+
+  c.querySelectorAll(".dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="rcoarse_name"]')?.value.trim() || "";
+    const qtyRaw = row.querySelector('input[name="rcoarse_qty"]')?.value;
+
+    if (name || qtyRaw !== "") seen = true;
+    if (!name || qtyRaw === "") anyBlank = true;
+
+    const qty = parseFloat(qtyRaw);
+    if (!isNaN(qty)) total += qty;
+  });
+
+  if (!seen || anyBlank) totalEl.value = "";
+  else totalEl.value = String(total);
+
+  updateWcAndMixFromRatio();
+};
+
 
 /* ---------- W/C + Mix ratio ---------- */
 
@@ -360,34 +511,77 @@ const validateForm = () => {
 
   (mode === "kg" ? kgRequired : ratioRequired).forEach(checkId);
 
-  // Extra validation for dynamic kg material rows (Water + Aggregates)
+  // Extra validation for dynamic fine/coarse aggregate rows
   if (mode === "kg") {
-    const c = $("kg-materials-container");
-    const requiredTypes = ["water", "fine", "medium", "coarse"];
+    const fineC = $("fine-kg-container");
+    const coarseC = $("coarse-kg-container");
     let firstRowBad = null;
 
-    requiredTypes.forEach((t) => {
-      const rows = c ? Array.from(c.querySelectorAll(".dynamic-row")) : [];
-      const matching = rows.filter(
-        (row) => row.querySelector('select[name="kg_type"]')?.value === t
-      );
-
-      if (!matching.length) {
-        missing.push("kgMaterials");
-        if (c) c.classList.add("error");
-        if (!firstRowBad && c) firstRowBad = c;
+    const validateRows = (container, nameSel, qtySel) => {
+      const rows = container ? Array.from(container.querySelectorAll(".dynamic-row")) : [];
+      if (!rows.length) {
+        missing.push("aggregates");
+        if (container) container.classList.add("error");
+        if (!firstRowBad && container) firstRowBad = container;
         return;
       }
-
-      matching.forEach((row) => {
-        const qtyEl = row.querySelector('input[name="kg_qty"]');
-        if (qtyEl && qtyEl.value === "") {
-          qtyEl.classList.add("error");
-          missing.push("kgMaterials");
+      rows.forEach((row) => {
+        const nameEl = row.querySelector(nameSel);
+        const qtyEl = row.querySelector(qtySel);
+        const name = nameEl?.value.trim() || "";
+        const qty = qtyEl?.value ?? "";
+        if (!name) {
+          nameEl?.classList.add("error");
+          missing.push("aggregates");
+          if (!firstRowBad) firstRowBad = nameEl;
+        }
+        if (qty === "") {
+          qtyEl?.classList.add("error");
+          missing.push("aggregates");
           if (!firstRowBad) firstRowBad = qtyEl;
         }
       });
-    });
+    };
+
+    validateRows(fineC, 'input[name="fine_name"]', 'input[name="fine_qty"]');
+    validateRows(coarseC, 'input[name="coarse_name"]', 'input[name="coarse_qty"]');
+
+    if (firstRowBad && !firstBad) firstBad = firstRowBad;
+  }
+
+  if (mode === "ratio") {
+    const fineC = $("fine-ratio-container");
+    const coarseC = $("coarse-ratio-container");
+    let firstRowBad = null;
+
+    const validateRows = (container, nameSel, qtySel) => {
+      const rows = container ? Array.from(container.querySelectorAll(".dynamic-row")) : [];
+      if (!rows.length) {
+        missing.push("aggregateRatios");
+        if (container) container.classList.add("error");
+        if (!firstRowBad && container) firstRowBad = container;
+        return;
+      }
+      rows.forEach((row) => {
+        const nameEl = row.querySelector(nameSel);
+        const qtyEl = row.querySelector(qtySel);
+        const name = nameEl?.value.trim() || "";
+        const qty = qtyEl?.value ?? "";
+        if (!name) {
+          nameEl?.classList.add("error");
+          missing.push("aggregateRatios");
+          if (!firstRowBad) firstRowBad = nameEl;
+        }
+        if (qty === "") {
+          qtyEl?.classList.add("error");
+          missing.push("aggregateRatios");
+          if (!firstRowBad) firstRowBad = qtyEl;
+        }
+      });
+    };
+
+    validateRows(fineC, 'input[name="rfine_name"]', 'input[name="rfine_qty"]');
+    validateRows(coarseC, 'input[name="rcoarse_name"]', 'input[name="rcoarse_qty"]');
 
     if (firstRowBad && !firstBad) firstBad = firstRowBad;
   }
@@ -455,12 +649,34 @@ const collectFormData = () => {
   });
 
 
-  const kgMaterials = [];
-  document.querySelectorAll("#kg-materials-container .dynamic-row").forEach((row) => {
-    const type = row.querySelector('select[name="kg_type"]')?.value || "";
-    const qty = row.querySelector('input[name="kg_qty"]')?.value ?? "";
-    if (type) kgMaterials.push({ type, qty });
+  const fineKgMaterials = [];
+  document.querySelectorAll("#fine-kg-container .dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="fine_name"]')?.value.trim() || "";
+    const qty = row.querySelector('input[name="fine_qty"]')?.value ?? "";
+    if (name || qty !== "") fineKgMaterials.push({ name, qty });
   });
+
+  const coarseKgMaterials = [];
+  document.querySelectorAll("#coarse-kg-container .dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="coarse_name"]')?.value.trim() || "";
+    const qty = row.querySelector('input[name="coarse_qty"]')?.value ?? "";
+    if (name || qty !== "") coarseKgMaterials.push({ name, qty });
+  });
+
+  const ratioFineMaterials = [];
+  document.querySelectorAll("#fine-ratio-container .dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="rfine_name"]')?.value.trim() || "";
+    const qty = row.querySelector('input[name="rfine_qty"]')?.value ?? "";
+    if (name || qty !== "") ratioFineMaterials.push({ name, qty });
+  });
+
+  const ratioCoarseMaterials = [];
+  document.querySelectorAll("#coarse-ratio-container .dynamic-row").forEach((row) => {
+    const name = row.querySelector('input[name="rcoarse_name"]')?.value.trim() || "";
+    const qty = row.querySelector('input[name="rcoarse_qty"]')?.value ?? "";
+    if (name || qty !== "") ratioCoarseMaterials.push({ name, qty });
+  });
+
 
   const cementContent = Number($("cementContent").value || 0);
   const waterContent = Number($("waterContent").value || 0);
@@ -520,7 +736,10 @@ const collectFormData = () => {
     admixtures,
     scms,
 
-    kgMaterials,
+    fineKgMaterials,
+    coarseKgMaterials,
+    ratioFineMaterials,
+    ratioCoarseMaterials,
 
     wcRatio,
     mixRatioString,
@@ -667,43 +886,85 @@ const loadRecordIntoForm = (r) => {
   // Kg inputs
   $("cementContent").value = r.cementContent ?? "";
 
-  // Dynamic kg material rows
-  const kgC = $("kg-materials-container");
-  if (kgC) {
-    kgC.innerHTML = "";
+  // Kg inputs
+  $("cementContent").value = r.cementContent ?? "";
+  $("waterContent").value = r.waterContent ?? "";
+  $("mediumAgg").value = r.mediumAgg ?? "";
 
-    if (Array.isArray(r.kgMaterials) && r.kgMaterials.length) {
-      r.kgMaterials.forEach((it) => kgC.appendChild(createKgMaterialRow({
-        type: it.type,
-        qty: it.qty === "" ? "" : Number(it.qty),
-      })));
+  // Fine aggregate rows (kg/m³)
+  const fineKgC = $("fine-kg-container");
+  if (fineKgC) {
+    fineKgC.innerHTML = "";
+    if (Array.isArray(r.fineKgMaterials) && r.fineKgMaterials.length) {
+      r.fineKgMaterials.forEach((it) =>
+        fineKgC.appendChild(createFineKgRow({ name: it.name, qty: it.qty }))
+      );
     } else {
-      // Backward compatibility: create one row each using saved totals
-      const fallback = [
-        { type: "water", qty: r.waterContent ?? "" },
-        { type: "fine", qty: r.fineAgg ?? "" },
-        { type: "medium", qty: r.mediumAgg ?? "" },
-        { type: "coarse", qty: r.coarseAgg ?? "" },
-      ];
-      fallback.forEach((it) => kgC.appendChild(createKgMaterialRow(it)));
+      // Backward compatibility: use saved total as a single row
+      fineKgC.appendChild(
+        createFineKgRow({ name: "Fine Aggregate", qty: r.fineAgg ?? "" })
+      );
     }
-
-    syncKgMaterialTotals();
-  } else {
-    // If container missing, keep legacy hidden totals
-    $("waterContent").value = r.waterContent ?? "";
-    $("fineAgg").value = r.fineAgg ?? "";
-    $("mediumAgg").value = r.mediumAgg ?? "";
-    $("coarseAgg").value = r.coarseAgg ?? "";
   }
 
-  // Ratio inputs
+  // Coarse aggregate rows (kg/m³)
+  const coarseKgC = $("coarse-kg-container");
+  if (coarseKgC) {
+    coarseKgC.innerHTML = "";
+    if (Array.isArray(r.coarseKgMaterials) && r.coarseKgMaterials.length) {
+      r.coarseKgMaterials.forEach((it) =>
+        coarseKgC.appendChild(createCoarseKgRow({ name: it.name, qty: it.qty }))
+      );
+    } else {
+      coarseKgC.appendChild(
+        createCoarseKgRow({ name: "Coarse Aggregate", qty: r.coarseAgg ?? "" })
+      );
+    }
+  }
 
+  // Ensure hidden totals are synced for kg mode
+  syncFineKgTotal();
+  syncCoarseKgTotal();
+
+
+  // Ratio inputs
   $("ratioCement").value = r.ratioCement ?? "1";
-  $("ratioFine").value = r.ratioFine ?? "";
   $("ratioMedium").value = r.ratioMedium ?? "";
-  $("ratioCoarse").value = r.ratioCoarse ?? "";
   $("ratioWater").value = r.ratioWater ?? "";
+
+  // Fine aggregate rows (ratio)
+  const fineRatioC = $("fine-ratio-container");
+  if (fineRatioC) {
+    fineRatioC.innerHTML = "";
+    if (Array.isArray(r.ratioFineMaterials) && r.ratioFineMaterials.length) {
+      r.ratioFineMaterials.forEach((it) =>
+        fineRatioC.appendChild(createFineRatioRow({ name: it.name, qty: it.qty }))
+      );
+    } else {
+      fineRatioC.appendChild(
+        createFineRatioRow({ name: "Fine Aggregate", qty: r.ratioFine ?? "" })
+      );
+    }
+  }
+
+  // Coarse aggregate rows (ratio)
+  const coarseRatioC = $("coarse-ratio-container");
+  if (coarseRatioC) {
+    coarseRatioC.innerHTML = "";
+    if (Array.isArray(r.ratioCoarseMaterials) && r.ratioCoarseMaterials.length) {
+      r.ratioCoarseMaterials.forEach((it) =>
+        coarseRatioC.appendChild(createCoarseRatioRow({ name: it.name, qty: it.qty }))
+      );
+    } else {
+      coarseRatioC.appendChild(
+        createCoarseRatioRow({ name: "Coarse Aggregate", qty: r.ratioCoarse ?? "" })
+      );
+    }
+  }
+
+  // Sync hidden totals for ratio mode
+  syncFineRatioTotal();
+  syncCoarseRatioTotal();
 
   if (mode === "kg") {
     updateWCRatioFromKg();
@@ -1040,20 +1301,29 @@ const resetFormFields = () => {
   $("admixtures-container").innerHTML = "";
   $("scms-container").innerHTML = "";
 
-  const kgC = $("kg-materials-container");
-  if (kgC) kgC.innerHTML = "";
-  if ($("waterContent")) $("waterContent").value = "";
+  const fineKgC = $("fine-kg-container");
+  const coarseKgC = $("coarse-kg-container");
+  const fineRatioC = $("fine-ratio-container");
+  const coarseRatioC = $("coarse-ratio-container");
+
+  if (fineKgC) fineKgC.innerHTML = "";
+  if (coarseKgC) coarseKgC.innerHTML = "";
+  if (fineRatioC) fineRatioC.innerHTML = "";
+  if (coarseRatioC) coarseRatioC.innerHTML = "";
+
   if ($("fineAgg")) $("fineAgg").value = "";
-  if ($("mediumAgg")) $("mediumAgg").value = "";
   if ($("coarseAgg")) $("coarseAgg").value = "";
+  if ($("ratioFine")) $("ratioFine").value = "";
+  if ($("ratioCoarse")) $("ratioCoarse").value = "";
 
   syncInputModeUI();
   syncConcreteTypeOther();
   syncCementTypeOther();
 
-  ensureDefaultKgMaterialRows();
+  ensureDefaultAggregateRows();
   setStatusLine("", "info");
 };
+
 
 /* ---------- Modal ---------- */
 
@@ -1078,16 +1348,45 @@ document.addEventListener("DOMContentLoaded", () => {
   loadImageAsDataURL("unilag-logo.png").then((d) => (logoImageDataUrl = d));
 
 
-  // Kg material rows (Water + Aggregates)
-  const addKgBtn = $("add-kg-material-btn");
-  if (addKgBtn) {
-    addKgBtn.onclick = () => {
-      const c = $("kg-materials-container");
-      if (c) c.appendChild(createKgMaterialRow());
-      syncKgMaterialTotals();
+  // Aggregate rows (Fine/Coarse) – dynamic like admixtures
+  const addFineKgBtn = $("add-fine-kg-btn");
+  if (addFineKgBtn) {
+    addFineKgBtn.onclick = () => {
+      const c = $("fine-kg-container");
+      if (c) c.appendChild(createFineKgRow());
+      syncFineKgTotal();
     };
   }
-  ensureDefaultKgMaterialRows();
+
+  const addCoarseKgBtn = $("add-coarse-kg-btn");
+  if (addCoarseKgBtn) {
+    addCoarseKgBtn.onclick = () => {
+      const c = $("coarse-kg-container");
+      if (c) c.appendChild(createCoarseKgRow());
+      syncCoarseKgTotal();
+    };
+  }
+
+  const addFineRatioBtn = $("add-fine-ratio-btn");
+  if (addFineRatioBtn) {
+    addFineRatioBtn.onclick = () => {
+      const c = $("fine-ratio-container");
+      if (c) c.appendChild(createFineRatioRow());
+      syncFineRatioTotal();
+    };
+  }
+
+  const addCoarseRatioBtn = $("add-coarse-ratio-btn");
+  if (addCoarseRatioBtn) {
+    addCoarseRatioBtn.onclick = () => {
+      const c = $("coarse-ratio-container");
+      if (c) c.appendChild(createCoarseRatioRow());
+      syncCoarseRatioTotal();
+    };
+  }
+
+  ensureDefaultAggregateRows();
+
   $("add-admixture-btn").onclick = () =>
     $("admixtures-container").appendChild(createAdmixtureRow());
   $("add-scm-btn").onclick = () =>
@@ -1109,7 +1408,10 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   );
   ["fineAgg", "mediumAgg", "coarseAgg"].forEach((id) =>
-    $(id).addEventListener("input", updateMixRatioFromKg)
+    $(id).addEventListener("input", () => {
+      updateWCRatioFromKg();
+      updateMixRatioFromKg();
+    })
   );
 
   ["ratioCement", "ratioFine", "ratioMedium", "ratioCoarse", "ratioWater"].forEach(
