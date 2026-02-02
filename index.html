@@ -6,6 +6,14 @@
   <title>UNILAG Research Mix Intake Form</title>
 
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Force ONE font everywhere (without changing style.css) -->
+  <style>
+    :root{
+      --font-type: var(--font-sans);
+    }
+  </style>
+
   <!-- jsPDF for PDF generation -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
   <!-- Main front-end logic -->
@@ -284,12 +292,12 @@
 
           <!-- W/C & MIX RATIO -->
           <div id="wcratio-box" class="wc-box" style="display:none;">
-              <strong>Water–Cement Ratio (from kg/m³):</strong>
+              <strong>Water–Cement Ratio:</strong>
               <span id="wcRatioValue">0.00</span>
           </div>
 
           <div id="mixratio-box" class="wc-box" style="display:none;">
-              <strong>Normalized Mix Ratio (by cement, from kg/m³):</strong>
+              <strong>Normalized Mix Ratio (by cement):</strong>
               <span id="mixRatioValue">–</span>
           </div>
 
