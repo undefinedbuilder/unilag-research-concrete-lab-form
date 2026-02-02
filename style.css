@@ -1,5 +1,5 @@
 /* ==========================================
-   Vintage Archives â€“ Manila Folder Theme
+   Vintage Archives – Manila Folder Theme
    Drop-in replacement for style.css
    ========================================== */
 
@@ -127,7 +127,7 @@ body::after {
 }
 
 /* --------------------------
-   Header â€“ file folder cover
+   Header – file folder cover
    -------------------------- */
 
 .header {
@@ -235,7 +235,7 @@ body::after {
 }
 
 /* --------------------------
-   Cards â€“ individual files
+   Cards – individual files
    -------------------------- */
 
 .card {
@@ -338,7 +338,7 @@ form {
 }
 
 .section-title::before {
-  content: "â–¢";
+  content: "▢";
   font-size: 0.8rem;
   color: var(--accent-blue);
 }
@@ -429,7 +429,7 @@ textarea:focus {
   transform: translateY(-1px);
 }
 
-/* error â€“ red stamp halo */
+/* error – red stamp halo */
 .error {
   border-color: var(--danger) !important;
   box-shadow:
@@ -537,7 +537,7 @@ input[type="radio"] {
 }
 
 /* --------------------------
-   Buttons â€“ rubber stamp labels
+   Buttons – rubber stamp labels
    -------------------------- */
 
 button {
@@ -670,7 +670,7 @@ button {
 }
 
 /* --------------------------
-   Saved mixes table â€“ card index
+   Saved mixes table – card index
    -------------------------- */
 
 .table-actions {
@@ -778,7 +778,7 @@ tbody tr:hover {
   overflow: hidden;
 }
 
-/* FILE NO. stamp â€“ now on the LEFT */
+/* FILE NO. stamp – now on the LEFT */
 .modal-card::before {
   content: "FILE NO.";
   position: absolute;
@@ -812,7 +812,7 @@ tbody tr:hover {
   color: var(--ink-main);
 }
 
-/* Close button â€“ fixed top-right */
+/* Close button – fixed top-right */
 .modal-x {
   position: absolute;
   top: 12px;
@@ -861,7 +861,7 @@ tbody tr:hover {
 }
 
 /* --------------------------
-   Footer
+   Footer (if used)
    -------------------------- */
 
 .footer {
