@@ -219,19 +219,36 @@
                 </span>
                 <input type="number" min="0" step="0.1" id="cementContent" />
               </label>
+
+              <label>
+                <span class="label-line">
+                  Water (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="waterContent" />
+              </label>
+
+              <label>
+                <span class="label-line">
+                  Medium Aggregate (kg/m³) <span class="required-asterisk">*</span>
+                </span>
+                <input type="number" min="0" step="0.1" id="mediumAgg" />
+              </label>
             </div>
 
-            <!-- Dynamic material rows (Water + Aggregates) -->
-            <div id="kg-materials-container" class="dynamic-group"></div>
+            <p class="subtle">Fine aggregate breakdown (enter one or more fine aggregates).</p>
+            <div id="fine-kg-container" class="dynamic-group"></div>
+            <button type="button" id="add-fine-kg-btn" class="btn-primary small">
+              + Add Fine Aggregate
+            </button>
 
-            <button type="button" id="add-kg-material-btn" class="btn-primary small">
-              + Add Material Row
+            <p class="subtle">Coarse aggregate breakdown (enter one or more coarse aggregates).</p>
+            <div id="coarse-kg-container" class="dynamic-group"></div>
+            <button type="button" id="add-coarse-kg-btn" class="btn-primary small">
+              + Add Coarse Aggregate
             </button>
 
             <!-- Hidden totals used for calculations & saving -->
-            <input type="hidden" id="waterContent" />
             <input type="hidden" id="fineAgg" />
-            <input type="hidden" id="mediumAgg" />
             <input type="hidden" id="coarseAgg" />
           </div>
 
@@ -249,13 +266,6 @@
 
               <label>
                 <span class="label-line">
-                  Fine Aggregate <span class="required-asterisk">*</span>
-                </span>
-                <input type="number" min="0" step="0.01" id="ratioFine" />
-              </label>
-
-              <label>
-                <span class="label-line">
                   Medium Aggregate <span class="required-asterisk">*</span>
                 </span>
                 <input type="number" min="0" step="0.01" id="ratioMedium" />
@@ -263,18 +273,27 @@
 
               <label>
                 <span class="label-line">
-                  Coarse Aggregate <span class="required-asterisk">*</span>
-                </span>
-                <input type="number" min="0" step="0.01" id="ratioCoarse" />
-              </label>
-
-              <label>
-                <span class="label-line">
-                  Water <span class="required-asterisk">*</span>
+                  Water (W/C) <span class="required-asterisk">*</span>
                 </span>
                 <input type="number" min="0" step="0.01" id="ratioWater" />
               </label>
             </div>
+
+            <p class="subtle">Fine aggregate breakdown (enter one or more fine aggregates).</p>
+            <div id="fine-ratio-container" class="dynamic-group"></div>
+            <button type="button" id="add-fine-ratio-btn" class="btn-primary small">
+              + Add Fine Aggregate (Ratio)
+            </button>
+
+            <p class="subtle">Coarse aggregate breakdown (enter one or more coarse aggregates).</p>
+            <div id="coarse-ratio-container" class="dynamic-group"></div>
+            <button type="button" id="add-coarse-ratio-btn" class="btn-primary small">
+              + Add Coarse Aggregate (Ratio)
+            </button>
+
+            <!-- Hidden totals used for calculations & saving -->
+            <input type="hidden" id="ratioFine" />
+            <input type="hidden" id="ratioCoarse" />
           </div>
 
           <!-- W/C & MIX RATIO -->
