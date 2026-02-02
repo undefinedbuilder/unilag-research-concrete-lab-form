@@ -1,26 +1,20 @@
-/* ==========================================
-   Vintage Archives – Manila Folder Theme
-   Drop-in replacement for style.css
-   ========================================== */
-
-/* Fonts: typewriter + clean sans */
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Special+Elite&display=swap");
 
 :root {
-  /* Manila folder palette */
-  --bg-main: #e9e1d1;          /* archive room background */
-  --paper-bg: #f7f1e3;         /* folder/paper */
-  --paper-alt: #f2e7d2;        /* slightly darker paper */
-  --spine-strip: #c7b79b;      /* folder spine */
-  --tab-bg: #ddd1b6;           /* file tab */
+  --bg-main: #e9e1d1;
+  --paper-bg: #f7f1e3;
+  --paper-alt: #f2e7d2;
+  --spine-strip: #c7b79b;
+  --tab-bg: #ddd1b6;
   --grid-line: rgba(181, 170, 145, 0.45);
 
-  --ink-main: #352f2a;         /* dark archival ink */
-  --ink-muted: #72685c;        /* faded type */
-  --accent-blue: #29486b;      /* stamp / ink blue */
-  --accent-red: #a3473e;       /* stamp red */
-  --accent-gold: #b28c51;      /* brass label */
-  --accent-green: #5f7352;     /* filing label green */
+  --ink-main: #352f2a;
+  --ink-muted: #72685c;
+
+  --accent-blue: #29486b;
+  --accent-red: #a3473e;
+  --accent-gold: #b28c51;
+  --accent-green: #5f7352;
 
   --danger: #8f3b37;
 
@@ -30,14 +24,9 @@
   --radius-lg: 16px;
   --radius-pill: 999px;
 
-  --font-sans: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-type: "Special Elite", "Courier New", ui-monospace, monospace;
 }
-
-/* --------------------------
-   Global base
-   -------------------------- */
 
 *,
 *::before,
@@ -47,695 +36,492 @@
 
 html,
 body {
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
+  height: 100%;
 }
 
 body {
-  font-family: var(--font-sans);
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 20% 0%, rgba(178, 140, 81, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 10%, rgba(41, 72, 107, 0.14), transparent 50%),
+    linear-gradient(180deg, var(--bg-main), #e3dac9);
   color: var(--ink-main);
-  background: var(--bg-main);
-  line-height: 1.6;
-  position: relative;
+  font-family: var(--font-sans);
 }
-
-/* subtle file-room texture: horizontal lines + noise */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(192, 181, 162, 0.19) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(192, 181, 162, 0.11) 1px, transparent 1px);
-  background-size: 26px 26px;
-  opacity: 0.3;
-  mix-blend-mode: multiply;
-  z-index: -2;
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='noStitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.19'/%3E%3C/svg%3E");
-  mix-blend-mode: soft-light;
-  z-index: -1;
-}
-
-/* --------------------------
-   Layout
-   -------------------------- */
 
 .container {
-  max-width: 1200px;
-  margin: 28px auto 40px;
-  padding: 0 18px;
-  position: relative;
+  width: min(1200px, 92vw);
+  margin: 22px auto 28px;
 }
 
-/* vertical index scribble */
-.container::before {
-  content: "ARCHIVES";
+.header {
+  background: linear-gradient(180deg, var(--paper-bg), var(--paper-alt));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 18px 18px 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header::before {
+  content: "";
   position: absolute;
-  left: -34px;
-  top: 70px;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(199, 183, 155, 0.55), rgba(199, 183, 155, 0.55)) left/14px 100% no-repeat,
+    repeating-linear-gradient(180deg, rgba(181, 170, 145, 0.22) 0 1px, transparent 1px 28px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.logo {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.header-text {
+  position: relative;
+  z-index: 1;
+}
+
+.header-university,
+.header-dept,
+.header-lab {
   font-family: var(--font-type);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header-university {
+  font-size: 1rem;
+}
+
+.header-dept {
   font-size: 0.9rem;
-  color: rgba(69, 60, 51, 0.7);
-  transform: rotate(-90deg);
-  letter-spacing: 0.16em;
+  margin-top: 3px;
+  color: var(--ink-muted);
+}
+
+.header-lab {
+  font-size: 1.05rem;
+  margin-top: 6px;
+}
+
+.notice {
+  position: relative;
+  z-index: 1;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px dashed rgba(167, 149, 119, 0.9);
+  background: rgba(244, 235, 220, 0.85);
+  border-radius: 12px;
+  color: var(--ink-main);
+  line-height: 1.35;
 }
 
 .main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2.2fr);
-  gap: 24px;
-  align-items: flex-start;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 16px;
   margin-top: 14px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   .main-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .container::before {
-    display: none;
+    grid-template-columns: 1fr;
   }
 }
-
-/* --------------------------
-   Header – file folder cover
-   -------------------------- */
-
-.header {
-  position: relative;
-  margin-bottom: 22px;
-  padding: 16px 20px 14px 34px;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: var(--shadow-soft);
-  border: 2px solid rgba(148, 131, 105, 0.9);
-  background: linear-gradient(135deg, #d7c8ac 0%, #e4d6ba 60%, #f0e3c9 100%);
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-/* vertical spine to the left */
-.header::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: 0;
-  bottom: -10px;
-  width: 20px;
-  background:
-    repeating-linear-gradient(
-      180deg,
-      #9a8c73 0,
-      #9a8c73 7px,
-      #827463 7px,
-      #827463 14px
-    );
-}
-
-/* tab on top right */
-.header::after {
-  content: "";
-  position: absolute;
-  top: 10px;
-  right: 40px;
-  width: 88px;
-  height: 22px;
-  background: var(--tab-bg);
-  border-radius: 4px 4px 0 0;
-  box-shadow: 0 4px 8px rgba(71, 63, 50, 0.25);
-}
-
-/* label strip under tab */
-.header::marker {
-  content: "";
-}
-
-/* logo box: stamped look */
-.logo {
-  width: 70px;
-  height: 70px;
-  border-radius: 12px;
-  background: #f6ecda;
-  padding: 6px;
-  box-shadow:
-    0 0 0 2px rgba(246, 240, 228, 0.9),
-    0 7px 14px rgba(71, 63, 50, 0.45);
-  flex-shrink: 0;
-  position: relative;
-}
-
-.header-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.header-university {
-  font-family: var(--font-type);
-  font-size: 0.9rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #312a22;
-}
-
-.header-dept {
-  font-size: 0.84rem;
-  font-style: italic;
-  color: rgba(68, 59, 49, 0.9);
-}
-
-.header-lab {
-  font-family: var(--font-type);
-  font-size: 0.95rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--accent-blue);
-}
-
-.notice {
-  flex-basis: 100%;
-  margin: 3px 0 0;
-  font-size: 0.78rem;
-  background: rgba(247, 240, 225, 0.9);
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px dashed rgba(145, 132, 108, 0.7);
-  color: var(--ink-muted);
-}
-
-/* --------------------------
-   Cards – individual files
-   -------------------------- */
 
 .card {
-  background: var(--paper-bg);
+  background: linear-gradient(180deg, var(--paper-bg), var(--paper-alt));
+  border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
-  padding: 18px 18px 20px 28px;
-  border: 2px solid rgba(200, 182, 146, 0.95);
+  padding: 16px;
   position: relative;
   overflow: hidden;
-  transform-origin: center;
-  transform: rotate(-0.4deg);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-/* second card slightly different tilt */
-.card:nth-of-type(2) {
-  transform: rotate(0.5deg);
-}
-
-.card:hover {
-  transform: translateY(-2px) rotate(0deg);
-  box-shadow: 0 16px 32px rgba(63, 54, 45, 0.45);
-  border-color: rgba(177, 160, 125, 0.98);
-}
-
-/* left punched holes */
 .card::before {
   content: "";
   position: absolute;
-  left: 10px;
-  top: 10px;
-  bottom: 10px;
-  width: 14px;
-  background-image: radial-gradient(circle, rgba(90, 80, 68, 0.7) 2px, transparent 2px);
-  background-size: 16px 40px;
-  opacity: 0.4;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(199, 183, 155, 0.5), rgba(199, 183, 155, 0.5)) left/12px 100% no-repeat,
+    repeating-linear-gradient(180deg, rgba(181, 170, 145, 0.18) 0 1px, transparent 1px 26px);
+  opacity: 0.5;
+  pointer-events: none;
 }
 
-/* mask to keep hole strip subtle */
-.card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to right,
-    rgba(247, 241, 227, 1) 0,
-    rgba(247, 241, 227, 1) 20px,
-    transparent 44px
-  );
-  pointer-events: none;
+.card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .card h3 {
   margin: 0 0 10px;
-  font-size: 1rem;
   font-family: var(--font-type);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  z-index: 1;
-}
-
-.card h3::before {
-  content: "FILE";
-  font-family: var(--font-type);
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  padding: 2px 6px;
-  border-radius: 3px;
-  border: 1px solid rgba(71, 60, 48, 0.8);
-  color: #3a332c;
-}
-
-/* --------------------------
-   Form structure
-   -------------------------- */
-
-form {
-  margin-top: 4px;
-  position: relative;
-  z-index: 1;
 }
 
 .section-title {
+  margin: 14px 0 8px;
   font-family: var(--font-type);
-  font-size: 0.85rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--ink-muted);
-  margin: 18px 0 8px;
-  padding-bottom: 4px;
-  border-bottom: 1px dashed rgba(165, 148, 123, 0.9);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--ink-main);
 }
 
-.section-title::before {
-  content: "▢";
-  font-size: 0.8rem;
-  color: var(--accent-blue);
+.grid {
+  display: grid;
+  gap: 10px;
 }
 
 .grid.two {
-  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 16px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 720px) {
   .grid.two {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
+.full-width {
+  grid-column: 1 / -1;
+}
+
 label {
-  font-size: 0.84rem;
-  color: var(--ink-main);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  gap: 6px;
 }
 
 .label-line {
-  font-weight: 500;
-  margin-bottom: 2px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* faint dotted underline like form line */
-.label-line::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  margin-left: 4px;
-  border-bottom: 1px dotted rgba(173, 156, 129, 0.6);
+  font-family: var(--font-type);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: var(--ink-main);
 }
 
 .required-asterisk {
-  color: var(--danger);
+  color: var(--accent-red);
+  font-weight: 700;
 }
 
-/* --------------------------
-   Inputs & textarea
-   -------------------------- */
-
-input[type="text"],
-input[type="number"],
-input[type="date"],
-input[type="email"],
-input[type="tel"],
+input,
 select,
 textarea {
-  border-radius: 9px;
-  border: 1px solid var(--border-soft);
-  padding: 7px 9px;
-  font-size: 0.85rem;
-  outline: none;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    background 0.15s ease,
-    transform 0.12s ease;
-  background: #fbf5e8;
+  width: 100%;
+  border: 1px solid rgba(126, 111, 92, 0.9);
+  background: rgba(251, 246, 234, 0.95);
   color: var(--ink-main);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  outline: none;
+  transition: box-shadow 0.12s ease, transform 0.12s ease, border-color 0.12s ease;
 }
 
 textarea {
   resize: vertical;
-  min-height: 60px;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: rgba(151, 137, 117, 0.9);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--accent-blue);
-  box-shadow:
-    0 0 0 1px rgba(41, 72, 107, 0.4),
-    0 0 0 4px rgba(218, 209, 191, 0.95);
-  background: #fef9ee;
+  border-color: rgba(43, 36, 27, 0.95);
+  box-shadow: 0 10px 22px rgba(21, 14, 8, 0.16);
   transform: translateY(-1px);
 }
 
-/* error – red stamp halo */
 .error {
   border-color: var(--danger) !important;
-  box-shadow:
-    0 0 0 1px rgba(143, 59, 55, 0.5),
-    0 0 0 4px rgba(237, 204, 198, 0.95);
+  box-shadow: 0 0 0 3px rgba(143, 59, 55, 0.15) !important;
 }
 
-/* radio */
-input[type="radio"] {
-  accent-color: var(--accent-blue);
-}
-
-/* helper */
-.subtle {
-  font-size: 0.78rem;
-  color: var(--ink-muted);
-  margin: 2px 0 6px;
-}
-
-/* --------------------------
-   Special boxes (W/C & Mix)
-   -------------------------- */
-
-.wc-box {
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: #f3ebdd;
-  border: 1px dashed rgba(161, 146, 118, 0.9);
-  font-size: 0.8rem;
+.mode-switch {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-}
-
-.wc-box strong {
-  font-family: var(--font-type);
-  font-size: 0.85rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-#wcRatioValue,
-#mixRatioValue {
-  font-family: var(--font-type);
-  font-size: 0.8rem;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: #fbf6ea;
-  border: 1px solid rgba(126, 111, 92, 0.9);
-}
-
-/* --------------------------
-   Dynamic groups (Admixtures / SCMs)
-   -------------------------- */
-
-.dynamic-group {
-  border-radius: 12px;
+  gap: 6px;
+  padding: 6px;
+  border-radius: var(--radius-pill);
   border: 1px dashed rgba(167, 149, 119, 0.9);
   background: #f4ebdc;
-  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.mode-tab {
+  flex: 1;
+  border: 1px solid rgba(126, 111, 92, 0.9);
+  background: #fbf6ea;
+  color: #2b241b;
+  border-radius: var(--radius-pill);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.mode-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 18px rgba(32, 20, 10, 0.18);
+}
+
+.mode-tab.is-active {
+  background: #2b241b;
+  color: #fbf6ea;
+  border-color: rgba(43, 36, 27, 0.95);
+  box-shadow: 0 10px 22px rgba(21, 14, 8, 0.22);
+}
+
+@media (max-width: 700px) {
+  .mode-switch {
+    flex-direction: column;
+    border-radius: 14px;
+  }
+}
+
+.material-block {
+  margin-top: 10px;
+}
+
+.material-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 6px;
+}
+
+.material-title {
+  font-family: var(--font-type);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2b241b;
+}
+
+.dynamic-group {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .dynamic-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
-  gap: 8px 10px;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
   align-items: end;
-  margin-bottom: 8px;
+  padding: 10px;
+  border: 1px dashed rgba(167, 149, 119, 0.9);
+  background: rgba(244, 235, 220, 0.75);
+  border-radius: 14px;
 }
 
-.dynamic-row label {
-  margin: 0;
-}
-
-@media (max-width: 700px) {
+@media (max-width: 720px) {
   .dynamic-row {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 }
 
 .remove-row-btn {
-  border-radius: 999px;
-  border: none;
-  width: 26px;
-  height: 26px;
-  font-size: 1rem;
-  line-height: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(143, 59, 55, 0.6);
+  background: rgba(163, 71, 62, 0.12);
+  color: var(--danger);
   cursor: pointer;
-  background: #f0d6d2;
-  color: #5f2824;
-  align-self: center;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.1s ease,
-    background 0.12s ease;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 
 .remove-row-btn:hover {
-  background: #e3beb8;
-  box-shadow: 0 2px 7px rgba(129, 74, 66, 0.6);
-  transform: rotate(-6deg) scale(1.03);
-}
-
-/* --------------------------
-   Buttons – rubber stamp labels
-   -------------------------- */
-
-button {
-  font-family: inherit;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(143, 59, 55, 0.14);
+  background: rgba(163, 71, 62, 0.18);
 }
 
 .btn-primary,
-.btn-submit,
-.btn-secondary {
-  border-radius: var(--radius-pill);
-  padding: 8px 16px;
-  font-size: 0.82rem;
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  white-space: nowrap;
-  position: relative;
-  overflow: hidden;
-}
-
-/* primary: blue-stamped button */
-.btn-primary,
+.btn-secondary,
 .btn-submit {
-  background: #29486b;
-  color: #f7f1e3;
-  font-family: var(--font-type);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  box-shadow: 0 6px 16px rgba(41, 72, 107, 0.7);
+  border: 1px solid rgba(43, 36, 27, 0.95);
+  border-radius: var(--radius-pill);
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  font-family: var(--font-sans);
 }
 
-/* stamp texture */
-.btn-primary::before,
-.btn-submit::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 50%);
-  opacity: 0.4;
-  pointer-events: none;
+.btn-primary {
+  background: #2b241b;
+  color: #fbf6ea;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(21, 14, 8, 0.22);
 }
 
 .btn-primary.small {
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 8px 12px;
+  font-size: 0.9rem;
 }
 
 .btn-primary.outline {
   background: transparent;
-  color: var(--accent-blue);
-  border: 1.5px dashed rgba(41, 72, 107, 0.7);
-  box-shadow: none;
+  color: #2b241b;
+}
+
+.btn-primary.outline:hover {
+  background: rgba(43, 36, 27, 0.06);
 }
 
 .btn-secondary {
-  background: #fbf5e8;
-  color: var(--ink-main);
-  border: 1.5px solid rgba(172, 156, 127, 0.95);
-  font-family: var(--font-type);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  background: transparent;
+  color: #2b241b;
+  border-color: rgba(126, 111, 92, 0.9);
 }
 
-.btn-primary:hover,
-.btn-submit:hover,
 .btn-secondary:hover {
   transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(21, 14, 8, 0.12);
+  background: rgba(43, 36, 27, 0.06);
 }
 
-/* Actions row */
+.btn-submit {
+  background: linear-gradient(180deg, #2b241b, #1f1a14);
+  color: #fbf6ea;
+}
+
+.btn-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(21, 14, 8, 0.28);
+}
+
 .actions.two-cols {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin: 16px 0 8px;
+  margin-top: 12px;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 720px) {
   .actions.two-cols {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
-/* --------------------------
-   Error summary & status
-   -------------------------- */
+.wc-box {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(167, 149, 119, 0.9);
+  background: rgba(244, 235, 220, 0.85);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
 
 .error-summary {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(143, 59, 55, 0.65);
+  background: rgba(143, 59, 55, 0.08);
+  color: var(--danger);
   display: none;
-  margin: 4px 0 10px;
-  padding: 7px 10px;
-  border-radius: 10px;
-  background: #f1dedd;
-  border: 1.5px dashed rgba(143, 59, 55, 0.75);
-  color: #5f2622;
-  font-size: 0.8rem;
 }
 
 .status-pill {
-  margin-top: 6px;
-  padding: 6px 12px;
+  margin-top: 10px;
+  padding: 10px 12px;
   border-radius: var(--radius-pill);
-  font-size: 0.76rem;
   display: inline-flex;
+  gap: 10px;
   align-items: center;
-  gap: 6px;
-  border: 1px dashed transparent;
+  border: 1px solid rgba(126, 111, 92, 0.8);
+  background: rgba(251, 246, 234, 0.9);
+  color: var(--ink-main);
+  font-size: 0.95rem;
 }
 
 .status-info {
-  background: #dde4f0;
-  border-color: #7f93b0;
-  color: #223048;
+  border-color: rgba(41, 72, 107, 0.55);
+  background: rgba(41, 72, 107, 0.08);
+  color: var(--accent-blue);
 }
 
 .status-success {
-  background: #dde8dd;
-  border-color: #6c8760;
-  color: #31402b;
+  border-color: rgba(95, 115, 82, 0.55);
+  background: rgba(95, 115, 82, 0.08);
+  color: var(--accent-green);
 }
 
 .status-error {
-  background: #f1dedd;
-  border-color: #c1766f;
-  color: #5f2622;
+  border-color: rgba(143, 59, 55, 0.65);
+  background: rgba(143, 59, 55, 0.08);
+  color: var(--danger);
 }
-
-/* --------------------------
-   Saved mixes table – card index
-   -------------------------- */
 
 .table-actions {
   display: flex;
   gap: 8px;
-  margin: 0 0 8px;
-  justify-content: flex-end;
   flex-wrap: wrap;
+  margin: 8px 0 10px;
 }
 
 .table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  border-radius: 12px;
-  border: 2px solid rgba(190, 172, 139, 0.98);
-  background: var(--paper-alt);
-  position: relative;
-}
-
-/* card index tab */
-.table-wrapper::before {
-  content: "";
-  position: absolute;
-  top: -12px;
-  left: 30px;
-  width: 74px;
-  height: 20px;
-  background: #d8ccb3;
-  border-radius: 4px 4px 0 0;
-  box-shadow: 0 4px 8px rgba(63, 54, 45, 0.3);
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(126, 111, 92, 0.55);
+  background: rgba(251, 246, 234, 0.65);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
-}
-
-thead {
-  background: #ded3c0;
+  min-width: 680px;
 }
 
 th,
 td {
-  padding: 8px 10px;
+  padding: 10px 12px;
   text-align: left;
-  border-bottom: 1px dashed rgba(169, 154, 129, 0.9);
+  border-bottom: 1px solid rgba(126, 111, 92, 0.35);
+  vertical-align: top;
 }
 
 th {
-  font-weight: 600;
-  white-space: nowrap;
-  color: #3b3329;
+  position: sticky;
+  top: 0;
+  background: rgba(221, 209, 182, 0.9);
   font-family: var(--font-type);
-  letter-spacing: 0.11em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
+  font-size: 0.78rem;
 }
 
-tbody tr:nth-child(even) {
-  background: #f6eddd;
+tbody tr {
+  cursor: pointer;
+  transition: background 0.12s ease;
 }
 
 tbody tr:hover {
-  background: #eadfcc;
-  cursor: pointer;
+  background: rgba(43, 36, 27, 0.06);
 }
 
 .no-data {
@@ -743,1024 +529,96 @@ tbody tr:hover {
   color: var(--ink-muted);
 }
 
-.small-note {
-  margin-top: 6px;
-  font-size: 0.76rem;
+.subtle {
   color: var(--ink-muted);
 }
 
-/* --------------------------
-   Modal (application number)
-   -------------------------- */
+.small-note {
+  margin-top: 8px;
+}
 
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(48, 41, 34, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 40;
+.small {
+  font-size: 0.9rem;
 }
 
 .modal.hidden {
   display: none;
 }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(25, 18, 12, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 50;
+}
+
 .modal-card {
-  background: var(--paper-alt);
-  border-radius: 18px;
-  box-shadow: 0 18px 36px rgba(63, 54, 45, 0.75);
-  width: min(380px, 92vw);
-  padding: 48px 16px 18px;
-  border: 2px dashed rgba(168, 151, 123, 0.98);
-  position: relative;
+  width: min(520px, 92vw);
+  background: linear-gradient(180deg, var(--paper-bg), var(--paper-alt));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
 }
 
-/* FILE NO. stamp – now on the LEFT */
-.modal-card::before {
-  content: "FILE NO.";
-  position: absolute;
-  top: 10px;
-  left: 12px;
-  font-family: var(--font-type);
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(98, 72, 67, 0.9);
-  border: 1px solid rgba(98, 72, 67, 0.8);
-  padding: 2px 6px;
-  transform: rotate(-9deg);
+.modal-card.research {
+  width: min(560px, 92vw);
 }
 
-/* Header row (title + close) */
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(221, 209, 182, 0.9);
+  border-bottom: 1px solid rgba(126, 111, 92, 0.4);
 }
 
 .modal-header h4 {
   margin: 0;
   font-family: var(--font-type);
-  font-size: 0.9rem;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-main);
 }
 
-/* Close button – fixed top-right */
 .modal-x {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  border-radius: 999px;
-  border: none;
-  background: #e1d3c0;
-  width: 26px;
-  height: 26px;
-  font-size: 1.1rem;
-  line-height: 1;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(126, 111, 92, 0.65);
+  background: rgba(251, 246, 234, 0.9);
   cursor: pointer;
-  color: #473a2c;
-  z-index: 20;
-}
-
-.modal-x:hover {
-  background: #d3c3ad;
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .modal-body {
-  font-size: 0.84rem;
-  color: var(--ink-main);
+  padding: 14px;
 }
 
-/* Application / File number display */
 .modal-number {
   font-family: var(--font-type);
-  font-size: 0.9rem;
-  background: #fbf6ea;
-  color: #2e2a24;
-  text-align: center;
-  padding: 8px 10px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  letter-spacing: 0.18em;
-  border: 1.5px solid rgba(79, 70, 54, 0.9);
-  box-shadow:
-    0 0 0 1px #fdfaf4,
-    0 0 20px rgba(71, 63, 50, 0.45);
+  font-size: 1.2rem;
+  letter-spacing: 0.08em;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(167, 149, 119, 0.9);
+  background: rgba(244, 235, 220, 0.85);
 }
 
 .modal-note {
-  font-size: 0.8rem;
+  margin-top: 10px;
   color: var(--ink-muted);
+  line-height: 1.4;
 }
-
-/* --------------------------
-   Footer (if used)
-   -------------------------- */
 
 .footer {
-  margin-top: 20px;
-  font-size: 0.78rem;
-  color: var(--ink-muted);
+  margin-top: 14px;
   text-align: center;
-
+  color: var(--ink-muted);
+  font-size: 0.95rem;
 }
-
-/* -----------------------------------------------------------
-   UNILAG CONCRETE LAB – RESEARCH MIX FRONT-END
------------------------------------------------------------ */
-
-const STORAGE_KEY = "unilag-concrete-lab-research-mixes";
-let logoImageDataUrl = null;
-
-/* ---------- Small helpers ---------- */
-
-const $ = (id) => document.getElementById(id);
-
-const setToday = (inputEl) => {
-  if (!inputEl) return;
-  const tzOffset = new Date().getTimezoneOffset() * 60000;
-  inputEl.value = new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
-};
-
-const sanitizeFilename = (name) =>
-  String(name).replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
-
-const setStatusLine = (msg, type = "info") => {
-  const el = $("status-line");
-  if (!el) return;
-  if (!msg) {
-    el.style.display = "none";
-    return;
-  }
-  el.style.display = "inline-flex";
-  el.textContent = msg;
-  el.className = `status-pill status-${type}`;
-};
-
-// Input mode is now a segmented control (buttons) to match the deployed client form UX.
-let CURRENT_MODE = "kg";
-const getInputMode = () => CURRENT_MODE || "kg";
-
-const setInputMode = (mode) => {
-  CURRENT_MODE = mode === "ratio" ? "ratio" : "kg";
-
-  const kgTab = $("modeKg");
-  const ratioTab = $("modeRatio");
-  if (kgTab && ratioTab) {
-    const isKg = CURRENT_MODE === "kg";
-    kgTab.classList.toggle("is-active", isKg);
-    ratioTab.classList.toggle("is-active", !isKg);
-    kgTab.setAttribute("aria-selected", String(isKg));
-    ratioTab.setAttribute("aria-selected", String(!isKg));
-  }
-
-  syncInputModeUI();
-  // Recompute ratios when switching.
-  if (CURRENT_MODE === "kg") {
-    updateWCRatioFromKg();
-    updateMixRatioFromKg();
-  } else {
-    updateWcAndMixFromRatio();
-  }
-};
-
-const loadImageAsDataURL = (path) =>
-  fetch(path)
-    .then((r) => r.blob())
-    .then(
-      (b) =>
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(b);
-        })
-    )
-    .catch(() => null);
-
-/* ---------- Dynamic rows ---------- */
-
-const createAdmixtureRow = (data = {}) => {
-  const row = document.createElement("div");
-  row.className = "dynamic-row";
-  row.innerHTML = `
-    <label>
-      <span class="label-line">
-        Admixture Name <span class="required-asterisk">*</span>
-      </span>
-      <input type="text" name="adm_name" value="${data.name || ""}">
-    </label>
-    <label>
-      <span class="label-line">
-        Dosage (L/100kg of Cement) <span class="required-asterisk">*</span>
-      </span>
-      <input type="text" name="adm_dosage" value="${data.dosage || ""}">
-    </label>
-    <button type="button" class="remove-row-btn">×</button>
-  `;
-  row.querySelector(".remove-row-btn").onclick = () => row.remove();
-  return row;
-};
-
-const createScmRow = (data = {}) => {
-  const row = document.createElement("div");
-  row.className = "dynamic-row";
-  row.innerHTML = `
-    <label>
-      <span class="label-line">
-        SCM Name <span class="required-asterisk">*</span>
-      </span>
-      <input type="text" name="scm_name" value="${data.name || ""}">
-    </label>
-    <label>
-      <span class="label-line">
-        Percent (%) <span class="required-asterisk">*</span>
-      </span>
-      <input type="text" name="scm_percent" value="${data.percent || ""}">
-    </label>
-    <button type="button" class="remove-row-btn">×</button>
-  `;
-  row.querySelector(".remove-row-btn").onclick = () => row.remove();
-  return row;
-};
-
-// Generic quantity rows for material quantities (kg/m³ and ratio mode)
-// Styled using the exact same .dynamic-row / .remove-row-btn as Admixtures/SCMs.
-const createQuantityRow = ({ label = "", value = "" } = {}, opts = {}) => {
-  const {
-    itemLabel = "Type / Description",
-    valueLabel = "Quantity",
-    valueStep = "0.1",
-    valueMin = "0",
-    valueName = "qty_value",
-    labelName = "qty_label",
-  } = opts;
-
-  const row = document.createElement("div");
-  row.className = "dynamic-row";
-  row.innerHTML = `
-    <label>
-      <span class="label-line">${itemLabel}</span>
-      <input type="text" name="${labelName}" value="${label}">
-    </label>
-    <label>
-      <span class="label-line">${valueLabel} <span class="required-asterisk">*</span></span>
-      <input type="number" min="${valueMin}" step="${valueStep}" name="${valueName}" value="${value}">
-    </label>
-    <button type="button" class="remove-row-btn">×</button>
-  `;
-  row.querySelector(".remove-row-btn").onclick = () => {
-    row.remove();
-    // Keep ratios fresh after deletes.
-    if (getInputMode() === "kg") {
-      updateWCRatioFromKg();
-      updateMixRatioFromKg();
-    } else {
-      updateWcAndMixFromRatio();
-    }
-  };
-  return row;
-};
-
-const sumContainerValues = (containerId, valueName) => {
-  const el = $(containerId);
-  if (!el) return NaN;
-  const inputs = Array.from(el.querySelectorAll(`input[name="${valueName}"]`));
-  if (!inputs.length) return NaN;
-  const vals = inputs.map((i) => parseFloat(i.value));
-  if (vals.some((v) => isNaN(v))) return NaN;
-  return vals.reduce((a, b) => a + b, 0);
-};
-
-const readRows = (containerId, labelName, valueName) => {
-  const el = $(containerId);
-  if (!el) return [];
-  const rows = [];
-  el.querySelectorAll(".dynamic-row").forEach((row) => {
-    const label = (row.querySelector(`input[name="${labelName}"]`) || {}).value || "";
-    const value = (row.querySelector(`input[name="${valueName}"]`) || {}).value || "";
-    if (label || value) rows.push({ label, value });
-  });
-  return rows;
-};
-
-/* ---------- W/C + Mix ratio ---------- */
-
-const toggleRatioBoxes = (show) => {
-  const wc = $("wcratio-box");
-  const mix = $("mixratio-box");
-  if (!wc || !mix) return;
-  wc.style.display = mix.style.display = show ? "" : "none";
-};
-
-const updateWCRatioFromKg = () => {
-  const cement = parseFloat($("cementContent").value);
-  const water = sumContainerValues("water-kg-container", "water_kg_value");
-  const fine = sumContainerValues("fine-kg-container", "fine_kg_value");
-  const medium = sumContainerValues("medium-kg-container", "medium_kg_value");
-  const coarse = sumContainerValues("coarse-kg-container", "coarse_kg_value");
-
-  if ([cement, water, fine, medium, coarse].some((v) => isNaN(v))) {
-    toggleRatioBoxes(false);
-    return 0;
-  }
-
-  const ratio = water / cement;
-  $("wcRatioValue").textContent = ratio.toFixed(2);
-  toggleRatioBoxes(true);
-  return ratio;
-};
-
-const updateMixRatioFromKg = () => {
-  const cement = parseFloat($("cementContent").value);
-  const fine = sumContainerValues("fine-kg-container", "fine_kg_value");
-  const medium = sumContainerValues("medium-kg-container", "medium_kg_value");
-  const coarse = sumContainerValues("coarse-kg-container", "coarse_kg_value");
-  const water = sumContainerValues("water-kg-container", "water_kg_value");
-
-  if ([cement, fine, medium, coarse, water].some((v) => isNaN(v))) {
-    toggleRatioBoxes(false);
-    return "";
-  }
-
-  const mix = `1 : ${(fine / cement).toFixed(2)} : ${(medium / cement).toFixed(
-    2
-  )} : ${(coarse / cement).toFixed(2)} : ${(water / cement).toFixed(2)}`;
-  $("mixRatioValue").textContent = mix;
-  toggleRatioBoxes(true);
-  return mix;
-};
-
-const updateWcAndMixFromRatio = () => {
-  const c = parseFloat($("ratioCement").value);
-  const f = sumContainerValues("fine-ratio-container", "fine_ratio_value");
-  const m = sumContainerValues("medium-ratio-container", "medium_ratio_value");
-  const co = sumContainerValues("coarse-ratio-container", "coarse_ratio_value");
-  const w = sumContainerValues("water-ratio-container", "water_ratio_value");
-
-  if ([c, f, m, co, w].some((v) => isNaN(v))) {
-    toggleRatioBoxes(false);
-    return { wcRatio: 0, mixRatioString: "" };
-  }
-
-  const wc = w / c;
-  const mix = `1 : ${(f / c).toFixed(2)} : ${(m / c).toFixed(
-    2
-  )} : ${(co / c).toFixed(2)} : ${(w / c).toFixed(2)}`;
-
-  $("wcRatioValue").textContent = wc.toFixed(2);
-  $("mixRatioValue").textContent = mix;
-  toggleRatioBoxes(true);
-  return { wcRatio: wc, mixRatioString: mix };
-};
-
-/* ---------- UI sync ---------- */
-
-const syncInputModeUI = () => {
-  const mode = getInputMode();
-  const kg = $("kgInputs");
-  const ratio = $("ratioInputs");
-  const kgH = $("kgHeading");
-  const ratioH = $("ratioHeading");
-
-  const showKg = mode === "kg";
-  if (kg) kg.style.display = showKg ? "" : "none";
-  if (kgH) kgH.style.display = showKg ? "" : "none";
-  if (ratio) ratio.style.display = showKg ? "none" : "";
-  if (ratioH) ratioH.style.display = showKg ? "none" : "";
-};
-
-const syncConcreteTypeOther = () => {
-  const sel = $("concreteType");
-  const wrap = $("concreteTypeOtherWrapper");
-  if (!sel || !wrap) return;
-  wrap.style.display = sel.value === "Other" ? "" : "none";
-};
-
-const syncCementTypeOther = () => {
-  const sel = $("cementType");
-  const wrap = $("cementTypeOtherWrapper");
-  if (!sel || !wrap) return;
-  wrap.style.display = sel.value === "Other" ? "" : "none";
-};
-
-/* ---------- Validation ---------- */
-
-const validateForm = () => {
-  const mode = getInputMode();
-
-  const commonRequired = [
-    "studentName",
-    "matricNumber",
-    "studentPhone",
-    "programme",
-    "supervisorName",
-    "thesisTitle",
-    "crushDate",
-    "concreteType",
-    "cementType",
-    "slump",
-    "ageDays",
-    "cubesCount",
-    "targetStrength",
-    "notes",
-  ];
-
-  // Cement stays fixed; all other materials are dynamic rows.
-  const kgFixedRequired = ["cementContent"];
-  const ratioFixedRequired = ["ratioCement"]; // readonly but keeps a stable base
-
-  document.querySelectorAll(".error").forEach((el) => el.classList.remove("error"));
-
-  const missing = [];
-  let firstBad = null;
-
-  const checkId = (id) => {
-    const el = $(id);
-    if (!el) return;
-    if (!String(el.value).trim()) {
-      el.classList.add("error");
-      missing.push(id);
-      if (!firstBad) firstBad = el;
-    }
-  };
-
-  commonRequired.forEach(checkId);
-
-  if ($("concreteType")?.value === "Other") checkId("concreteTypeOther");
-  if ($("cementType")?.value === "Other") checkId("cementTypeOther");
-
-  // Fixed required field per mode
-  (mode === "kg" ? kgFixedRequired : ratioFixedRequired).forEach(checkId);
-
-  const checkDynamic = (containerId, valueName) => {
-    const container = $(containerId);
-    if (!container) return;
-    const inputs = Array.from(container.querySelectorAll(`input[name="${valueName}"]`));
-    if (!inputs.length) {
-      missing.push(containerId);
-      const addBtn = document.querySelector(`[data-add-for="${containerId}"]`);
-      if (!firstBad && addBtn) firstBad = addBtn;
-      return;
-    }
-    inputs.forEach((i) => {
-      if (!String(i.value).trim()) {
-        i.classList.add("error");
-        missing.push(containerId);
-        if (!firstBad) firstBad = i;
-      }
-    });
-  };
-
-  if (mode === "kg") {
-    checkDynamic("water-kg-container", "water_kg_value");
-    checkDynamic("fine-kg-container", "fine_kg_value");
-    checkDynamic("medium-kg-container", "medium_kg_value");
-    checkDynamic("coarse-kg-container", "coarse_kg_value");
-  } else {
-    checkDynamic("fine-ratio-container", "fine_ratio_value");
-    checkDynamic("medium-ratio-container", "medium_ratio_value");
-    checkDynamic("coarse-ratio-container", "coarse_ratio_value");
-    checkDynamic("water-ratio-container", "water_ratio_value");
-  }
-
-  document.querySelectorAll("#admixtures-container .dynamic-row").forEach((row) => {
-    const name = row.querySelector('input[name="adm_name"]');
-    const dosage = row.querySelector('input[name="adm_dosage"]');
-    if ((!name?.value.trim() || !dosage?.value.trim()) && (name || dosage)) {
-      if (name && !name.value.trim()) name.classList.add("error");
-      if (dosage && !dosage.value.trim()) dosage.classList.add("error");
-      missing.push("admixtures");
-      if (!firstBad) firstBad = name || dosage;
-    }
-  });
-
-  document.querySelectorAll("#scms-container .dynamic-row").forEach((row) => {
-    const name = row.querySelector('input[name="scm_name"]');
-    const percent = row.querySelector('input[name="scm_percent"]');
-    if ((!name?.value.trim() || !percent?.value.trim()) && (name || percent)) {
-      if (name && !name.value.trim()) name.classList.add("error");
-      if (percent && !percent.value.trim()) percent.classList.add("error");
-      missing.push("scms");
-      if (!firstBad) firstBad = name || percent;
-    }
-  });
-
-  const errorSummary = $("form-error-summary");
-
-  if (missing.length) {
-    if (errorSummary) {
-      errorSummary.textContent = "Please fill all required fields.";
-      errorSummary.style.display = "block";
-    }
-    if (firstBad) firstBad.focus();
-    return false;
-  }
-
-  if (errorSummary) errorSummary.style.display = "none";
-  return true;
-};
-
-/* ---------- Collect data ---------- */
-
-const collectFormData = () => {
-  const mode = getInputMode();
-
-  let concreteType = $("concreteType").value;
-  if (concreteType === "Other") concreteType = $("concreteTypeOther").value.trim();
-
-  let cementType = $("cementType").value;
-  if (cementType === "Other") cementType = $("cementTypeOther").value.trim();
-
-  const admixtures = [];
-  document.querySelectorAll("#admixtures-container .dynamic-row").forEach((row) => {
-    const name = row.querySelector('input[name="adm_name"]').value.trim();
-    const dosage = row.querySelector('input[name="adm_dosage"]').value.trim();
-    if (name || dosage) admixtures.push({ name, dosage });
-  });
-
-  const scms = [];
-  document.querySelectorAll("#scms-container .dynamic-row").forEach((row) => {
-    const name = row.querySelector('input[name="scm_name"]').value.trim();
-    const percent = row.querySelector('input[name="scm_percent"]').value.trim();
-    if (name || percent) scms.push({ name, percent });
-  });
-
-  const cementContent = Number($("cementContent").value || 0);
-
-  // Dynamic material rows (keep both totals + row breakdowns)
-  const waterKgRows = readRows("water-kg-container", "water_kg_label", "water_kg_value");
-  const fineKgRows = readRows("fine-kg-container", "fine_kg_label", "fine_kg_value");
-  const mediumKgRows = readRows("medium-kg-container", "medium_kg_label", "medium_kg_value");
-  const coarseKgRows = readRows("coarse-kg-container", "coarse_kg_label", "coarse_kg_value");
-
-  const waterContent = sumContainerValues("water-kg-container", "water_kg_value") || 0;
-  const fineAgg = sumContainerValues("fine-kg-container", "fine_kg_value") || 0;
-  const mediumAgg = sumContainerValues("medium-kg-container", "medium_kg_value") || 0;
-  const coarseAgg = sumContainerValues("coarse-kg-container", "coarse_kg_value") || 0;
-
-  const ratioCement = Number($("ratioCement").value || 1);
-  const fineRatioRows = readRows("fine-ratio-container", "fine_ratio_label", "fine_ratio_value");
-  const mediumRatioRows = readRows("medium-ratio-container", "medium_ratio_label", "medium_ratio_value");
-  const coarseRatioRows = readRows("coarse-ratio-container", "coarse_ratio_label", "coarse_ratio_value");
-  const waterRatioRows = readRows("water-ratio-container", "water_ratio_label", "water_ratio_value");
-
-  const ratioFine = sumContainerValues("fine-ratio-container", "fine_ratio_value") || 0;
-  const ratioMedium = sumContainerValues("medium-ratio-container", "medium_ratio_value") || 0;
-  const ratioCoarse = sumContainerValues("coarse-ratio-container", "coarse_ratio_value") || 0;
-  const ratioWater = sumContainerValues("water-ratio-container", "water_ratio_value") || 0;
-
-  let wcRatio = 0;
-  let mixRatioString = "";
-
-  if (mode === "kg") {
-    wcRatio = updateWCRatioFromKg();
-    mixRatioString = updateMixRatioFromKg();
-  } else {
-    const r = updateWcAndMixFromRatio();
-    wcRatio = r.wcRatio;
-    mixRatioString = r.mixRatioString;
-  }
-
-  return {
-    inputMode: mode,
-
-    studentName: $("studentName").value.trim(),
-    matricNumber: $("matricNumber").value.trim(),
-    studentPhone: $("studentPhone").value.trim(),
-    programme: $("programme").value.trim(),
-    supervisorName: $("supervisorName").value.trim(),
-    thesisTitle: $("thesisTitle").value.trim(),
-
-    crushDate: $("crushDate").value,
-    concreteType,
-    cementType,
-    slump: Number($("slump").value || 0),
-    ageDays: Number($("ageDays").value || 0),
-    cubesCount: Number($("cubesCount").value || 0),
-    targetStrength: Number($("targetStrength").value || 0),
-    notes: $("notes").value.trim(),
-
-    cementContent,
-    waterContent,
-    fineAgg,
-    mediumAgg,
-    coarseAgg,
-
-    // Row breakdowns (useful for PDF + later review)
-    waterKgRows,
-    fineKgRows,
-    mediumKgRows,
-    coarseKgRows,
-
-    ratioCement,
-    ratioFine,
-    ratioMedium,
-    ratioCoarse,
-    ratioWater,
-
-    fineRatioRows,
-    mediumRatioRows,
-    coarseRatioRows,
-    waterRatioRows,
-
-    admixtures,
-    scms,
-
-    wcRatio,
-    mixRatioString,
-  };
-};
-
-/* ---------- Local storage ---------- */
-
-const getLocalRecords = () => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
-const saveLocalRecords = (records) => localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-
-const saveLocal = (record) => {
-  const list = getLocalRecords();
-  list.unshift(record);
-  saveLocalRecords(list);
-};
-
-/* ---------- Render saved records ---------- */
-
-const renderSavedRecords = () => {
-  const list = getLocalRecords();
-  const tbody = $("mixes-table-body");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-  if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="no-data">No mixes saved yet.</td></tr>`;
-    return;
-  }
-
-  list.forEach((r, i) => {
-    const tr = document.createElement("tr");
-    tr.dataset.index = i;
-
-    const wcText =
-      typeof r.wcRatio === "number" && !isNaN(r.wcRatio)
-        ? r.wcRatio.toFixed(2)
-        : r.wcRatio || "";
-
-    const when = r.savedAt ? new Date(r.savedAt).toLocaleString() : "";
-
-    tr.innerHTML = `
-      <td>${r.recordId || "—"}</td>
-      <td>${r.inputMode === "ratio" ? "Ratio" : "Kg/m³"}</td>
-      <td>${r.studentName || ""}</td>
-      <td>${r.concreteType || ""}</td>
-      <td>${wcText}</td>
-      <td>${when}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-};
-
-/* ---------- Load record into form ---------- */
-
-const loadRecordIntoForm = (r) => {
-  const simpleFields = [
-    ["studentName", "studentName"],
-    ["matricNumber", "matricNumber"],
-    ["programme", "programme"],
-    ["supervisorName", "supervisorName"],
-    ["studentPhone", "studentPhone"],
-    ["thesisTitle", "thesisTitle"],
-    ["crushDate", "crushDate"],
-    ["slump", "slump"],
-    ["ageDays", "ageDays"],
-    ["cubesCount", "cubesCount"],
-    ["targetStrength", "targetStrength"],
-    ["notes", "notes"],
-  ];
-
-  simpleFields.forEach(([id, key]) => {
-    const el = $(id);
-    if (!el) return;
-
-    if (id === "programme") {
-      el.value = r.programme ?? r.organisationType ?? "";
-    } else {
-      el.value = r[key] ?? "";
-    }
-  });
-
-  // Concrete type
-  const cSel = $("concreteType");
-  const cOther = $("concreteTypeOther");
-  if (cSel) {
-    const saved = r.concreteType || "";
-    let matched = false;
-    for (const opt of cSel.options) {
-      if (opt.value === saved || opt.text === saved) {
-        cSel.value = opt.value;
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) {
-      cSel.value = saved ? "Other" : "";
-      if (cOther) cOther.value = saved || "";
-    } else if (cOther) {
-      cOther.value = "";
-    }
-  }
-
-  // Cement type
-  const ctSel = $("cementType");
-  const ctOther = $("cementTypeOther");
-  if (ctSel) {
-    const saved = r.cementType || "";
-    let matched = false;
-    for (const opt of ctSel.options) {
-      if (opt.value === saved || opt.text === saved) {
-        ctSel.value = opt.value;
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) {
-      ctSel.value = saved ? "Other" : "";
-      if (ctOther) ctOther.value = saved || "";
-    } else if (ctOther) {
-      ctOther.value = "";
-    }
-  }
-
-  // Mode
-  const mode = r.inputMode === "ratio" ? "ratio" : "kg";
-  setInputMode(mode);
-
-  const loadQuantityGroup = (containerId, opts, rowsFallback, totalFallback) => {
-    const c = $(containerId);
-    if (!c) return;
-    c.innerHTML = "";
-    const rows =
-      Array.isArray(rowsFallback) && rowsFallback.length
-        ? rowsFallback
-        : [{ label: "", value: String(totalFallback ?? "") }];
-    rows.forEach((row) => c.appendChild(createQuantityRow(row, opts)));
-  };
-
-  // Fixed cement
-  $("cementContent").value = r.cementContent ?? "";
-  $("ratioCement").value = r.ratioCement ?? "1";
-
-  // Kg dynamic groups
-  loadQuantityGroup(
-    "water-kg-container",
-    { itemLabel: "Type / Description", valueLabel: "Water (kg/m³)", valueStep: "0.1", labelName: "water_kg_label", valueName: "water_kg_value" },
-    r.waterKgRows,
-    r.waterContent
-  );
-  loadQuantityGroup(
-    "fine-kg-container",
-    { itemLabel: "Type / Description", valueLabel: "Fine Aggregate (kg/m³)", valueStep: "0.1", labelName: "fine_kg_label", valueName: "fine_kg_value" },
-    r.fineKgRows,
-    r.fineAgg
-  );
-  loadQuantityGroup(
-    "medium-kg-container",
-    { itemLabel: "Type / Description", valueLabel: "Medium Aggregate (kg/m³)", valueStep: "0.1", labelName: "medium_kg_label", valueName: "medium_kg_value" },
-    r.mediumKgRows,
-    r.mediumAgg
-  );
-  loadQuantityGroup(
-    "coarse-kg-container",
-    { itemLabel: "Type / Description", valueLabel: "Coarse Aggregate (kg/m³)", valueStep: "0.1", labelName: "coarse_kg_label", valueName: "coarse_kg_value" },
-    r.coarseKgRows,
-    r.coarseAgg
-  );
-
-  // Ratio dynamic groups
-  loadQuantityGroup(
-    "fine-ratio-container",
-    { itemLabel: "Type / Description", valueLabel: "Fine Aggregate (ratio)", valueStep: "0.01", labelName: "fine_ratio_label", valueName: "fine_ratio_value" },
-    r.fineRatioRows,
-    r.ratioFine
-  );
-  loadQuantityGroup(
-    "medium-ratio-container",
-    { itemLabel: "Type / Description", valueLabel: "Medium Aggregate (ratio)", valueStep: "0.01", labelName: "medium_ratio_label", valueName: "medium_ratio_value" },
-    r.mediumRatioRows,
-    r.ratioMedium
-  );
-  loadQuantityGroup(
-    "coarse-ratio-container",
-    { itemLabel: "Type / Description", valueLabel: "Coarse Aggregate (ratio)", valueStep: "0.01", labelName: "coarse_ratio_label", valueName: "coarse_ratio_value" },
-    r.coarseRatioRows,
-    r.ratioCoarse
-  );
-  loadQuantityGroup(
-    "water-ratio-container",
-    { itemLabel: "Type / Description", valueLabel: "Water (ratio)", valueStep: "0.01", labelName: "water_ratio_label", valueName: "water_ratio_value" },
-    r.waterRatioRows,
-    r.ratioWater
-  );
-
-  if (mode === "kg") {
-    updateWCRatioFromKg();
-    updateMixRatioFromKg();
-  } else {
-    updateWcAndMixFromRatio();
-  }
-
-  // Admixtures
-  const admC = $("admixtures-container");
-  admC.innerHTML = "";
-  (r.admixtures || []).forEach((a) => admC.appendChild(createAdmixtureRow(a)));
-
-  // SCMs
-  const scmC = $("scms-container");
-  scmC.innerHTML = "";
-  (r.scms || []).forEach((s) => scmC.appendChild(createScmRow(s)));
-
-  syncConcreteTypeOther();
-  syncCementTypeOther();
-  setStatusLine("Saved record loaded into form.", "info");
-};
-
-/* ---------- PDF ---------- */
-/* (Your existing PDF generation continues here — unchanged except it now uses totals) */
-
-/* ---------- Export CSV / Submit / Reset / Modal ---------- */
-/* (Your existing functions remain compatible since totals are still stored as waterContent/fineAgg/...) */
-
-/* ---------- Reset ---------- */
-
-const resetFormFields = () => {
-  const form = $("mix-form");
-  if (!form) return;
-  form.reset();
-  setToday($("crushDate"));
-  $("ratioCement").value = "1";
-  $("wcRatioValue").textContent = "0.00";
-  $("mixRatioValue").textContent = "–";
-  setInputMode("kg");
-  syncConcreteTypeOther();
-  syncCementTypeOther();
-
-  // Clear dynamic material groups
-  [
-    "water-kg-container",
-    "fine-kg-container",
-    "medium-kg-container",
-    "coarse-kg-container",
-    "fine-ratio-container",
-    "medium-ratio-container",
-    "coarse-ratio-container",
-    "water-ratio-container",
-  ].forEach((id) => {
-    const c = $(id);
-    if (c) c.innerHTML = "";
-  });
-
-  // Seed a single row in each material group
-  [
-    "add-water-kg-btn",
-    "add-fine-kg-btn",
-    "add-medium-kg-btn",
-    "add-coarse-kg-btn",
-    "add-fine-ratio-btn",
-    "add-medium-ratio-btn",
-    "add-coarse-ratio-btn",
-    "add-water-ratio-btn",
-  ].forEach((btnId) => {
-    const b = $(btnId);
-    if (b) b.click();
-  });
-
-  $("admixtures-container").innerHTML = "";
-  $("scms-container").innerHTML = "";
-  setStatusLine("", "info");
-};
-
-/* ---------- Init ---------- */
-
-document.addEventListener("DOMContentLoaded", () => {
-  const ySpan = $("year");
-  if (ySpan) ySpan.textContent = new Date().getFullYear();
-
-  setToday($("crushDate"));
-  loadImageAsDataURL("unilag-logo.png").then((d) => (logoImageDataUrl = d));
-
-  $("add-admixture-btn").onclick = () => $("admixtures-container").appendChild(createAdmixtureRow());
-  $("add-scm-btn").onclick = () => $("scms-container").appendChild(createScmRow());
-
-  // Mode tabs
-  $("modeKg").addEventListener("click", () => setInputMode("kg"));
-  $("modeRatio").addEventListener("click", () => setInputMode("ratio"));
-  setInputMode("kg");
-
-  $("concreteType").addEventListener("change", syncConcreteTypeOther);
-  $("cementType").addEventListener("change", syncCementTypeOther);
-  syncConcreteTypeOther();
-  syncCementTypeOther();
-
-  // ----- Dynamic material rows: add buttons + default rows
-  const bindAdd = (btnId, containerId, opts) => {
-    const btn = $(btnId);
-    const c = $(containerId);
-    if (!btn || !c) return;
-    btn.onclick = () => {
-      const row = createQuantityRow({}, opts);
-      // Keep ratios fresh as the user types
-      row.querySelectorAll("input").forEach((i) => {
-        i.addEventListener("input", () => {
-          if (getInputMode() === "kg") {
-            updateWCRatioFromKg();
-            updateMixRatioFromKg();
-          } else {
-            updateWcAndMixFromRatio();
-          }
-        });
-      });
-      c.appendChild(row);
-    };
-    // Create an initial row
-    btn.click();
-  };
-
-  bindAdd("add-water-kg-btn", "water-kg-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Water (kg/m³)",
-    valueStep: "0.1",
-    labelName: "water_kg_label",
-    valueName: "water_kg_value",
-  });
-  bindAdd("add-fine-kg-btn", "fine-kg-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Fine Aggregate (kg/m³)",
-    valueStep: "0.1",
-    labelName: "fine_kg_label",
-    valueName: "fine_kg_value",
-  });
-  bindAdd("add-medium-kg-btn", "medium-kg-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Medium Aggregate (kg/m³)",
-    valueStep: "0.1",
-    labelName: "medium_kg_label",
-    valueName: "medium_kg_value",
-  });
-  bindAdd("add-coarse-kg-btn", "coarse-kg-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Coarse Aggregate (kg/m³)",
-    valueStep: "0.1",
-    labelName: "coarse_kg_label",
-    valueName: "coarse_kg_value",
-  });
-
-  bindAdd("add-fine-ratio-btn", "fine-ratio-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Fine Aggregate (ratio)",
-    valueStep: "0.01",
-    labelName: "fine_ratio_label",
-    valueName: "fine_ratio_value",
-  });
-  bindAdd("add-medium-ratio-btn", "medium-ratio-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Medium Aggregate (ratio)",
-    valueStep: "0.01",
-    labelName: "medium_ratio_label",
-    valueName: "medium_ratio_value",
-  });
-  bindAdd("add-coarse-ratio-btn", "coarse-ratio-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Coarse Aggregate (ratio)",
-    valueStep: "0.01",
-    labelName: "coarse_ratio_label",
-    valueName: "coarse_ratio_value",
-  });
-  bindAdd("add-water-ratio-btn", "water-ratio-container", {
-    itemLabel: "Type / Description",
-    valueLabel: "Water (ratio)",
-    valueStep: "0.01",
-    labelName: "water_ratio_label",
-    valueName: "water_ratio_value",
-  });
-
-  // Cement changes affect W/C + mix
-  $("cementContent").addEventListener("input", () => {
-    updateWCRatioFromKg();
-    updateMixRatioFromKg();
-  });
-
-  // Hook the rest of your existing buttons (submit/export/clear/etc.)
-  $("mix-form").addEventListener("submit", (e) => e.preventDefault()); // replace with your submitForm if needed
-});
