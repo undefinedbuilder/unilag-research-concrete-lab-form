@@ -1,19 +1,6 @@
 /* -----------------------------------------------------------
    UNILAG CONCRETE LAB – RESEARCH MIX FRONT-END (script.js)
-   -----------------------------------------------------------
-   Updates included (as requested):
-   1) Application number is sequential + exact formats:
-      - Ratio mode: UNILAG-CLR-A00001
-      - KG mode:   UNILAG CLK-A00001
-      Backend-first (if /api/submit returns recordId), with local fallback
-      (local fallback is sequential per-device).
-
-   2) Computed Normalized Mix Ratio NO LONGER includes water/cement ratio.
-      Mix ratio string becomes: 1 : (fine/cement) : (coarse/cement)
-      W/C ratio is still computed/displayed separately.
-
-   Submits to: /api/submit
------------------------------------------------------------ */
+   -----------------------------------------------------------*/
 
 const STORAGE_KEY = "unilag-concrete-lab-research-mixes";
 const SUBMIT_URL = "/api/submit";
@@ -65,26 +52,12 @@ const loadImageAsDataURL = (path) =>
     )
     .catch(() => null);
 
-/* ---------- Sequential Application No (backend-first, local fallback) ---------- */
-
-const SEQ_KEY_RATIO = "unilag_seq_ratio";
-const SEQ_KEY_KG = "unilag_seq_kg";
-
-const pad5 = (n) => String(n).padStart(5, "0");
-
-const nextLocalSequence = (mode) => {
-  const key = mode === "ratio" ? SEQ_KEY_RATIO : SEQ_KEY_KG;
-  const current = Number(localStorage.getItem(key) || "0");
-  const next = current + 1;
-  localStorage.setItem(key, String(next));
-  return next;
+const toNum = (v) => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : NaN;
 };
 
-const makeLocalRecordId = (mode) => {
-  const seq = nextLocalSequence(mode);
-  if (mode === "ratio") return `UNILAG-CLR-A${pad5(seq)}`;
-  return `UNILAG CLK-A${pad5(seq)}`;
-};
+const fmt2 = (n) => (Number.isFinite(n) ? n.toFixed(2) : "");
 
 /* ---------- Dynamic rows: Admixtures & SCMs ---------- */
 
@@ -280,7 +253,7 @@ const ensureDefaultAggregateRows = () => {
   syncCoarseRatioTotal();
 };
 
-/* ---------- Totals + derived values ---------- */
+/* ---------- W/C + Mix ratio display ---------- */
 
 const toggleRatioBoxes = (show) => {
   const wc = $("wcratio-box");
@@ -289,13 +262,90 @@ const toggleRatioBoxes = (show) => {
   wc.style.display = mix.style.display = show ? "" : "none";
 };
 
-const updateWCRatioFromKg = () => {
-  const cement = parseFloat($("cementContent")?.value);
-  const water = parseFloat($("waterContent")?.value);
-  const fine = parseFloat($("fineAgg")?.value);
-  const coarse = parseFloat($("coarseAgg")?.value);
+/**
+ * Build mix ratio string from current kg rows:
+ *   1:<fine1/cement>:<fine2/cement>:<coarse1/cement>:...
+ * (2dp, no spaces, no water)
+ */
+const buildMixRatioFromKgRows = () => {
+  const cement = toNum($("cementContent")?.value);
+  if (!Number.isFinite(cement) || cement <= 0) return "";
 
-  if ([cement, water, fine, coarse].some((v) => isNaN(v)) || cement <= 0) {
+  const fineC = $("fine-kg-container");
+  const coarseC = $("coarse-kg-container");
+  if (!fineC || !coarseC) return "";
+
+  const parts = ["1"];
+
+  const readRows = (container, qtySelector) => {
+    const vals = [];
+    container.querySelectorAll(".dynamic-row").forEach((row) => {
+      const qtyRaw = row.querySelector(qtySelector)?.value;
+      const qty = toNum(qtyRaw);
+      if (!Number.isFinite(qty) || qtyRaw === "") vals.push(NaN);
+      else vals.push(qty);
+    });
+    return vals;
+  };
+
+  const fineVals = readRows(fineC, 'input[name="fine_qty"]');
+  const coarseVals = readRows(coarseC, 'input[name="coarse_qty"]');
+
+  // must have at least 1 row each and all rows filled
+  if (!fineVals.length || !coarseVals.length) return "";
+  if (fineVals.some((v) => !Number.isFinite(v)) || coarseVals.some((v) => !Number.isFinite(v))) return "";
+
+  fineVals.forEach((v) => parts.push(fmt2(v / cement)));
+  coarseVals.forEach((v) => parts.push(fmt2(v / cement)));
+
+  return parts.join(":");
+};
+
+/**
+ * Build mix ratio string from ratio rows:
+ *   1:<fine1>:<fine2>:<coarse1>:<coarse2>:...
+ * (2dp, no spaces, no water)
+ */
+const buildMixRatioFromRatioRows = () => {
+  const cement = toNum($("ratioCement")?.value);
+  if (!Number.isFinite(cement) || cement <= 0) return "";
+
+  const fineC = $("fine-ratio-container");
+  const coarseC = $("coarse-ratio-container");
+  if (!fineC || !coarseC) return "";
+
+  const parts = ["1"];
+
+  const readRows = (container, qtySelector) => {
+    const vals = [];
+    container.querySelectorAll(".dynamic-row").forEach((row) => {
+      const qtyRaw = row.querySelector(qtySelector)?.value;
+      const qty = toNum(qtyRaw);
+      if (!Number.isFinite(qty) || qtyRaw === "") vals.push(NaN);
+      else vals.push(qty);
+    });
+    return vals;
+  };
+
+  const fineVals = readRows(fineC, 'input[name="rfine_qty"]');
+  const coarseVals = readRows(coarseC, 'input[name="rcoarse_qty"]');
+
+  if (!fineVals.length || !coarseVals.length) return "";
+  if (fineVals.some((v) => !Number.isFinite(v)) || coarseVals.some((v) => !Number.isFinite(v))) return "";
+
+  fineVals.forEach((v) => parts.push(fmt2(v / cement)));
+  coarseVals.forEach((v) => parts.push(fmt2(v / cement)));
+
+  return parts.join(":");
+};
+
+const updateWCRatioFromKg = () => {
+  const cement = toNum($("cementContent")?.value);
+  const water = toNum($("waterContent")?.value);
+  const fineTotal = toNum($("fineAgg")?.value);
+  const coarseTotal = toNum($("coarseAgg")?.value);
+
+  if ([cement, water, fineTotal, coarseTotal].some((v) => !Number.isFinite(v)) || cement <= 0) {
     toggleRatioBoxes(false);
     return 0;
   }
@@ -306,44 +356,38 @@ const updateWCRatioFromKg = () => {
   return ratio;
 };
 
-/* ✅ Change #2: normalized mix ratio EXCLUDES water */
 const updateMixRatioFromKg = () => {
-  const cement = parseFloat($("cementContent")?.value);
-  const fine = parseFloat($("fineAgg")?.value);
-  const coarse = parseFloat($("coarseAgg")?.value);
-  const water = parseFloat($("waterContent")?.value); // still used for W/C separately
-
-  if ([cement, fine, coarse, water].some((v) => isNaN(v)) || cement <= 0) {
+  const mix = buildMixRatioFromKgRows();
+  if (!mix) {
     toggleRatioBoxes(false);
     return "";
   }
-
-  const mix = `1 : ${(fine / cement).toFixed(2)} : ${(coarse / cement).toFixed(2)}`;
   $("mixRatioValue").textContent = mix;
   toggleRatioBoxes(true);
   return mix;
 };
 
-/* ✅ Change #2: ratio-mode normalized mix ratio EXCLUDES water */
 const updateWcAndMixFromRatio = () => {
-  const c = parseFloat($("ratioCement")?.value);
-  const f = parseFloat($("ratioFine")?.value);
-  const co = parseFloat($("ratioCoarse")?.value);
-  const w = parseFloat($("ratioWater")?.value);
+  const c = toNum($("ratioCement")?.value);
+  const w = toNum($("ratioWater")?.value);
 
-  if ([c, f, co, w].some((v) => isNaN(v)) || c <= 0) {
+  // mix ratio uses dynamic rows; w/c is displayed but not part of mix ratio
+  const mix = buildMixRatioFromRatioRows();
+
+  // show/hide boxes depending on completeness
+  if (!mix || !Number.isFinite(c) || c <= 0 || !Number.isFinite(w)) {
     toggleRatioBoxes(false);
     return { wcRatio: 0, mixRatioString: "" };
   }
 
   const wc = w / c;
-  const mix = `1 : ${(f / c).toFixed(2)} : ${(co / c).toFixed(2)}`;
-
   $("wcRatioValue").textContent = wc.toFixed(2);
   $("mixRatioValue").textContent = mix;
   toggleRatioBoxes(true);
   return { wcRatio: wc, mixRatioString: mix };
 };
+
+/* ---------- Totals (hidden inputs) ---------- */
 
 const syncFineKgTotal = () => {
   const c = $("fine-kg-container");
@@ -359,8 +403,8 @@ const syncFineKgTotal = () => {
 
     if (!name || qtyRaw === "") anyBlank = true;
 
-    const qty = parseFloat(qtyRaw);
-    if (!isNaN(qty)) total += qty;
+    const qty = toNum(qtyRaw);
+    if (Number.isFinite(qty)) total += qty;
   });
 
   totalEl.value = anyBlank ? "" : String(total);
@@ -383,8 +427,8 @@ const syncCoarseKgTotal = () => {
 
     if (!name || qtyRaw === "") anyBlank = true;
 
-    const qty = parseFloat(qtyRaw);
-    if (!isNaN(qty)) total += qty;
+    const qty = toNum(qtyRaw);
+    if (Number.isFinite(qty)) total += qty;
   });
 
   totalEl.value = anyBlank ? "" : String(total);
@@ -407,8 +451,8 @@ const syncFineRatioTotal = () => {
 
     if (!name || qtyRaw === "") anyBlank = true;
 
-    const qty = parseFloat(qtyRaw);
-    if (!isNaN(qty)) total += qty;
+    const qty = toNum(qtyRaw);
+    if (Number.isFinite(qty)) total += qty;
   });
 
   totalEl.value = anyBlank ? "" : String(total);
@@ -430,8 +474,8 @@ const syncCoarseRatioTotal = () => {
 
     if (!name || qtyRaw === "") anyBlank = true;
 
-    const qty = parseFloat(qtyRaw);
-    if (!isNaN(qty)) total += qty;
+    const qty = toNum(qtyRaw);
+    if (Number.isFinite(qty)) total += qty;
   });
 
   totalEl.value = anyBlank ? "" : String(total);
@@ -491,12 +535,13 @@ const resetKgInputs = () => {
   syncFineKgTotal();
   syncCoarseKgTotal();
 
-  toggleRatioBoxes(false);
   if ($("wcRatioValue")) $("wcRatioValue").textContent = "0.00";
   if ($("mixRatioValue")) $("mixRatioValue").textContent = "–";
+  toggleRatioBoxes(false);
 };
 
 const resetRatioInputs = () => {
+  // cement fixed at 1
   if ($("ratioCement")) $("ratioCement").value = "1";
   if ($("ratioWater")) $("ratioWater").value = "";
 
@@ -514,9 +559,9 @@ const resetRatioInputs = () => {
   syncFineRatioTotal();
   syncCoarseRatioTotal();
 
-  toggleRatioBoxes(false);
   if ($("wcRatioValue")) $("wcRatioValue").textContent = "0.00";
   if ($("mixRatioValue")) $("mixRatioValue").textContent = "–";
+  toggleRatioBoxes(false);
 };
 
 const handleInputModeChange = () => {
@@ -527,9 +572,9 @@ const handleInputModeChange = () => {
   }
 
   if (mode === "kg") {
-    resetRatioInputs();
+    resetRatioInputs(); // clear ratio when switching to kg
   } else {
-    resetKgInputs();
+    resetKgInputs(); // clear kg when switching to ratio
   }
 
   lastInputMode = mode;
@@ -578,8 +623,8 @@ const validateForm = () => {
     "notes",
   ];
 
-  const kgRequired = ["cementContent", "waterContent", "fineAgg", "coarseAgg"];
-  const ratioRequired = ["ratioCement", "ratioFine", "ratioCoarse", "ratioWater"];
+  const kgRequired = ["cementContent", "waterContent"];
+  const ratioRequired = ["ratioCement", "ratioWater"];
 
   const missing = [];
   let firstBad = null;
@@ -656,6 +701,32 @@ const collectDynamicRows = (containerId, nameSel, qtySel) => {
   return out;
 };
 
+const collectAggregatesForPosting = (mode) => {
+  // These are the arrays the backend can append to separate sheets.
+  // We send the ACTIVE mode rows only.
+  if (mode === "kg") {
+    const fine = collectDynamicRows("fine-kg-container", 'input[name="fine_name"]', 'input[name="fine_qty"]')
+      .filter((r) => (r.name || "").trim() || String(r.qty ?? "").trim())
+      .map((r, idx) => ({ rowNo: idx + 1, name: r.name, qty: r.qty, unit: "kg/m3" }));
+
+    const coarse = collectDynamicRows("coarse-kg-container", 'input[name="coarse_name"]', 'input[name="coarse_qty"]')
+      .filter((r) => (r.name || "").trim() || String(r.qty ?? "").trim())
+      .map((r, idx) => ({ rowNo: idx + 1, name: r.name, qty: r.qty, unit: "kg/m3" }));
+
+    return { fineAggregates: fine, coarseAggregates: coarse };
+  }
+
+  const fine = collectDynamicRows("fine-ratio-container", 'input[name="rfine_name"]', 'input[name="rfine_qty"]')
+    .filter((r) => (r.name || "").trim() || String(r.qty ?? "").trim())
+    .map((r, idx) => ({ rowNo: idx + 1, name: r.name, qty: r.qty, unit: "ratio" }));
+
+  const coarse = collectDynamicRows("coarse-ratio-container", 'input[name="rcoarse_name"]', 'input[name="rcoarse_qty"]')
+    .filter((r) => (r.name || "").trim() || String(r.qty ?? "").trim())
+    .map((r, idx) => ({ rowNo: idx + 1, name: r.name, qty: r.qty, unit: "ratio" }));
+
+  return { fineAggregates: fine, coarseAggregates: coarse };
+};
+
 const collectFormData = () => {
   const mode = getInputMode();
 
@@ -684,15 +755,15 @@ const collectFormData = () => {
   const ratioFineMaterials = collectDynamicRows("fine-ratio-container", 'input[name="rfine_name"]', 'input[name="rfine_qty"]');
   const ratioCoarseMaterials = collectDynamicRows("coarse-ratio-container", 'input[name="rcoarse_name"]', 'input[name="rcoarse_qty"]');
 
-  const cementContent = Number($("cementContent")?.value || 0);
-  const waterContent = Number($("waterContent")?.value || 0);
-  const fineAgg = Number($("fineAgg")?.value || 0);
-  const coarseAgg = Number($("coarseAgg")?.value || 0);
+  const cementContent = toNum($("cementContent")?.value);
+  const waterContent = toNum($("waterContent")?.value);
+  const fineAgg = toNum($("fineAgg")?.value);
+  const coarseAgg = toNum($("coarseAgg")?.value);
 
-  const ratioCement = Number($("ratioCement")?.value || 0);
-  const ratioFine = Number($("ratioFine")?.value || 0);
-  const ratioCoarse = Number($("ratioCoarse")?.value || 0);
-  const ratioWater = Number($("ratioWater")?.value || 0);
+  const ratioCement = toNum($("ratioCement")?.value);
+  const ratioFine = toNum($("ratioFine")?.value);
+  const ratioCoarse = toNum($("ratioCoarse")?.value);
+  const ratioWater = toNum($("ratioWater")?.value);
 
   let wcRatio = 0;
   let mixRatioString = "";
@@ -705,6 +776,8 @@ const collectFormData = () => {
     wcRatio = r.wcRatio;
     mixRatioString = r.mixRatioString;
   }
+
+  const { fineAggregates, coarseAggregates } = collectAggregatesForPosting(mode);
 
   return {
     inputMode: mode,
@@ -719,29 +792,34 @@ const collectFormData = () => {
     crushDate: $("crushDate")?.value || "",
     concreteType,
     cementType,
-    slump: Number($("slump")?.value || 0),
-    ageDays: Number($("ageDays")?.value || 0),
-    cubesCount: Number($("cubesCount")?.value || 0),
-    targetStrength: Number($("targetStrength")?.value || 0),
+    slump: toNum($("slump")?.value) || 0,
+    ageDays: toNum($("ageDays")?.value) || 0,
+    cubesCount: toNum($("cubesCount")?.value) || 0,
+    targetStrength: toNum($("targetStrength")?.value) || 0,
     notes: $("notes")?.value.trim() || "",
 
-    cementContent,
-    waterContent,
-    fineAgg,
-    coarseAgg,
+    cementContent: Number.isFinite(cementContent) ? cementContent : 0,
+    waterContent: Number.isFinite(waterContent) ? waterContent : 0,
+    fineAgg: Number.isFinite(fineAgg) ? fineAgg : 0,
+    coarseAgg: Number.isFinite(coarseAgg) ? coarseAgg : 0,
 
-    ratioCement,
-    ratioFine,
-    ratioCoarse,
-    ratioWater,
+    ratioCement: Number.isFinite(ratioCement) ? ratioCement : 1,
+    ratioFine: Number.isFinite(ratioFine) ? ratioFine : 0,
+    ratioCoarse: Number.isFinite(ratioCoarse) ? ratioCoarse : 0,
+    ratioWater: Number.isFinite(ratioWater) ? ratioWater : 0,
 
     admixtures,
     scms,
 
+    // Keep detailed rows for PDF + saving
     fineKgMaterials,
     coarseKgMaterials,
     ratioFineMaterials,
     ratioCoarseMaterials,
+
+    // NEW: send active aggregates arrays for separate Google Sheets tabs
+    fineAggregates,
+    coarseAggregates,
 
     wcRatio,
     mixRatioString,
@@ -800,7 +878,120 @@ const renderSavedRecords = () => {
   });
 };
 
-/* ---------- PDF generation (single-page w/ office-use box at bottom) ---------- */
+const setSelectWithOther = (selectEl, otherInputEl, savedValue) => {
+  if (!selectEl) return;
+  const saved = String(savedValue || "").trim();
+
+  let matched = false;
+  for (const opt of selectEl.options) {
+    if (opt.value === saved || opt.text === saved) {
+      selectEl.value = opt.value;
+      matched = true;
+      break;
+    }
+  }
+
+  if (!matched) {
+    if (saved) {
+      selectEl.value = "Other";
+      if (otherInputEl) otherInputEl.value = saved;
+    } else {
+      selectEl.value = "";
+      if (otherInputEl) otherInputEl.value = "";
+    }
+  } else {
+    if (otherInputEl) otherInputEl.value = "";
+  }
+};
+
+const loadRecordIntoForm = (r) => {
+  const simpleFields = [
+    ["studentName", "studentName"],
+    ["matricNumber", "matricNumber"],
+    ["programme", "programme"],
+    ["supervisorName", "supervisorName"],
+    ["studentPhone", "studentPhone"],
+    ["thesisTitle", "thesisTitle"],
+    ["crushDate", "crushDate"],
+    ["slump", "slump"],
+    ["ageDays", "ageDays"],
+    ["cubesCount", "cubesCount"],
+    ["targetStrength", "targetStrength"],
+    ["notes", "notes"],
+  ];
+
+  simpleFields.forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.value = r[key] ?? "";
+  });
+
+  setSelectWithOther($("concreteType"), $("concreteTypeOther"), r.concreteType || "");
+  setSelectWithOther($("cementType"), $("cementTypeOther"), r.cementType || "");
+
+  const mode = r.inputMode === "ratio" ? "ratio" : "kg";
+  if ($("modeKg")) $("modeKg").checked = mode === "kg";
+  if ($("modeRatio")) $("modeRatio").checked = mode === "ratio";
+  lastInputMode = mode;
+  syncInputModeUI();
+
+  // Populate active mode only; then clear inactive mode (by requirement)
+  if (mode === "kg") {
+    resetRatioInputs();
+    if ($("cementContent")) $("cementContent").value = r.cementContent ?? "";
+    if ($("waterContent")) $("waterContent").value = r.waterContent ?? "";
+
+    const fineKgC = $("fine-kg-container");
+    const coarseKgC = $("coarse-kg-container");
+    if (fineKgC) {
+      fineKgC.innerHTML = "";
+      (r.fineKgMaterials || []).forEach((it) => fineKgC.appendChild(createFineKgRow(it)));
+    }
+    if (coarseKgC) {
+      coarseKgC.innerHTML = "";
+      (r.coarseKgMaterials || []).forEach((it) => coarseKgC.appendChild(createCoarseKgRow(it)));
+    }
+    ensureDefaultAggregateRows();
+    updateWCRatioFromKg();
+    updateMixRatioFromKg();
+  } else {
+    resetKgInputs();
+    if ($("ratioCement")) $("ratioCement").value = "1";
+    if ($("ratioWater")) $("ratioWater").value = r.ratioWater ?? "";
+
+    const fineRatioC = $("fine-ratio-container");
+    const coarseRatioC = $("coarse-ratio-container");
+    if (fineRatioC) {
+      fineRatioC.innerHTML = "";
+      (r.ratioFineMaterials || []).forEach((it) => fineRatioC.appendChild(createFineRatioRow(it)));
+    }
+    if (coarseRatioC) {
+      coarseRatioC.innerHTML = "";
+      (r.ratioCoarseMaterials || []).forEach((it) => coarseRatioC.appendChild(createCoarseRatioRow(it)));
+    }
+    ensureDefaultAggregateRows();
+    updateWcAndMixFromRatio();
+  }
+
+  // Admixtures / SCMs
+  const admC = $("admixtures-container");
+  if (admC) {
+    admC.innerHTML = "";
+    (r.admixtures || []).forEach((a) => admC.appendChild(createAdmixtureRow(a)));
+  }
+
+  const scmC = $("scms-container");
+  if (scmC) {
+    scmC.innerHTML = "";
+    (r.scms || []).forEach((s) => scmC.appendChild(createScmRow(s)));
+  }
+
+  syncConcreteTypeOther();
+  syncCementTypeOther();
+  setStatusLine("Saved record loaded into form.", "info");
+};
+
+/* ---------- PDF generation (single-page, office-use box fixed at bottom) ---------- */
 
 const renderPdfOnePage = (data, fontSize) => {
   const { jsPDF } = window.jspdf;
@@ -810,15 +1001,17 @@ const renderPdfOnePage = (data, fontSize) => {
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 32;
 
-  // Office-use box
+  // Office-use box constants (exactly as reference)
   const copyrightGap = 24;
   const boxHeight = 140;
   const reservedBottom = margin + copyrightGap + boxHeight + 8;
+
   const usableBottomY = pageH - reservedBottom;
 
   const titleSize = Math.max(10, fontSize + 2);
   const hSize = Math.max(9, fontSize + 1);
   const bodySize = fontSize;
+
   const lineH = Math.round(bodySize * 1.35);
 
   let y = 40;
@@ -843,15 +1036,17 @@ const renderPdfOnePage = (data, fontSize) => {
     return true;
   };
 
-  const addGap = (k = 0.5) => {
-    const gap = Math.round(lineH * k);
+  const addGap = (n = 1) => {
+    const gap = lineH * n * 0.5;
     if (!canFit(gap)) return false;
     y += gap;
     return true;
   };
 
   // Header
-  if (logoImageDataUrl) doc.addImage(logoImageDataUrl, "PNG", margin, y, 54, 54);
+  if (logoImageDataUrl) {
+    doc.addImage(logoImageDataUrl, "PNG", margin, y, 54, 54);
+  }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(titleSize);
@@ -866,10 +1061,11 @@ const renderPdfOnePage = (data, fontSize) => {
     if (!addLine(`Application No: ${data.recordId}`)) return null;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(bodySize);
-    if (!addGap(0.6)) return null;
+    if (!addGap(0.5)) return null;
   }
 
   if (!addHeading("Student & Research Details")) return null;
+
   const studentLines = [
     `Student Name: ${data.studentName}`,
     `Matriculation Number: ${data.matricNumber}`,
@@ -878,10 +1074,12 @@ const renderPdfOnePage = (data, fontSize) => {
     `Student Phone: ${data.studentPhone}`,
     `Project / Thesis Title: ${data.thesisTitle}`,
   ];
+
   for (const ln of studentLines) if (!addLine(ln)) return null;
-  if (!addGap(0.8)) return null;
+  if (!addGap(0.6)) return null;
 
   if (!addHeading("Test Information")) return null;
+
   const testLines = [
     `Crushing Date: ${data.crushDate}`,
     `Concrete Type: ${data.concreteType}`,
@@ -891,8 +1089,9 @@ const renderPdfOnePage = (data, fontSize) => {
     `Number of Cubes: ${data.cubesCount}`,
     `Target Strength (MPa): ${data.targetStrength}`,
   ];
+
   for (const ln of testLines) if (!addLine(ln)) return null;
-  if (!addGap(0.8)) return null;
+  if (!addGap(0.6)) return null;
 
   const modeLabel = data.inputMode === "ratio" ? "Ratio" : "kg/m³";
   if (!addHeading(`Mix Design (${modeLabel})`)) return null;
@@ -929,7 +1128,7 @@ const renderPdfOnePage = (data, fontSize) => {
     }
     if (!addLine(`Coarse Aggregate Total (kg/m³): ${data.coarseAgg}`)) return null;
   } else {
-    if (!addLine(`Cement: ${data.ratioCement}`)) return null;
+    if (!addLine(`Cement: 1`)) return null;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(bodySize);
@@ -959,17 +1158,20 @@ const renderPdfOnePage = (data, fontSize) => {
     }
     if (!addLine(`Coarse Aggregate Total: ${data.ratioCoarse}`)) return null;
 
-    if (!addLine(`Water: ${data.ratioWater}`)) return null;
+    if (!addLine(`Water-Cement Ratio Input: ${data.ratioWater}`)) return null;
   }
 
-  const wcRatioText =
-    typeof data.wcRatio === "number" && Number.isFinite(data.wcRatio)
-      ? data.wcRatio.toFixed(2)
-      : String(data.wcRatio || "");
+  // IMPORTANT:
+  // - Mix Ratio always printed (no water, includes all rows)
+  // - W/C Ratio printed ONLY for kg/m³ mode (NOT ratio mode)
+  if (data.inputMode === "kg") {
+    const wcRatioText =
+      typeof data.wcRatio === "number" && Number.isFinite(data.wcRatio) ? data.wcRatio.toFixed(2) : String(data.wcRatio || "");
+    if (!addLine(`W/C Ratio: ${wcRatioText}`)) return null;
+  }
 
-  if (!addLine(`W/C Ratio: ${wcRatioText}`)) return null;
-  if (!addLine(`Normalized Mix Ratio: ${data.mixRatioString || ""}`)) return null;
-  if (!addGap(0.6)) return null;
+  if (!addLine(`Mix Ratio: ${data.mixRatioString || ""}`)) return null;
+  if (!addGap(0.5)) return null;
 
   // Admixtures
   doc.setFont("helvetica", "bold");
@@ -1012,11 +1214,10 @@ const renderPdfOnePage = (data, fontSize) => {
   const noteLines = doc.splitTextToSize(data.notes || "", wrapW);
   for (const ln of noteLines) if (!addLine(ln)) return null;
 
-  // Office-use box at bottom (fixed)
+  // ---- Office-use box: EXACT AS REFERENCE, fixed at bottom (no page break) ----
   const boxWidth = pageW - margin * 2;
   const boxX = margin;
-  const boxY = pageH - margin - 140 - 24;
-  const boxHeight = 140;
+  const boxY = pageH - margin - boxHeight - copyrightGap;
 
   doc.setDrawColor(0);
   doc.rect(boxX, boxY, boxWidth, boxHeight);
@@ -1068,6 +1269,7 @@ const renderPdfOnePage = (data, fontSize) => {
 
 const generatePDF = async (data) => {
   const fontSizesToTry = [10, 9, 8, 7, 6];
+
   for (const fs of fontSizesToTry) {
     const doc = renderPdfOnePage(data, fs);
     if (doc) {
@@ -1079,11 +1281,10 @@ const generatePDF = async (data) => {
     }
   }
 
-  // last-resort message
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "pt", format: "A4" });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
+  doc.setFontSize(6);
   doc.text(
     "PDF content too long to fit on one page with the fixed 'FOR OFFICE USE ONLY' box. Please shorten Notes or reduce rows.",
     32,
@@ -1104,7 +1305,7 @@ const exportCsv = () => {
     "SupervisorName","ThesisTitle","CrushDate","ConcreteType","CementType","Slump",
     "AgeDays","CubesCount","TargetStrength",
     "CementContent","WaterContent","FineAgg","CoarseAgg",
-    "RatioCement","RatioFine","RatioCoarse","RatioWater","WCRatio","NormalizedMixRatio","Notes","SavedAt",
+    "RatioCement","RatioFine","RatioCoarse","RatioWater","WCRatio","MixRatio","Notes","SavedAt",
   ];
 
   const lines = [headers.join(",")];
@@ -1210,21 +1411,32 @@ const submitForm = async (e) => {
   if (!logoImageDataUrl) logoImageDataUrl = await loadImageAsDataURL("unilag-logo.png");
 
   let apiResult = null;
+  let resOk = false;
+
   try {
     const res = await fetch(SUBMIT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+    resOk = res.ok;
     apiResult = await res.json().catch(() => null);
   } catch {
     apiResult = null;
+    resOk = false;
   }
 
-  // ✅ Change #1: Use backend-provided recordId if present; else sequential local fallback.
-  const recordId =
-    (apiResult && typeof apiResult.recordId === "string" && apiResult.recordId.trim()) ||
-    makeLocalRecordId(data.inputMode);
+  // BACKEND IS SOURCE OF TRUTH FOR recordId (sequential)
+  if (!resOk || !apiResult?.recordId) {
+    const msg =
+      apiResult?.message
+        ? `Failed: ${apiResult.message}`
+        : "Failed to submit. Backend did not return an application number (recordId).";
+    setStatusLine(msg, "error");
+    return;
+  }
+
+  const recordId = apiResult.recordId;
 
   const record = { ...data, recordId, savedAt: new Date().toISOString() };
 
@@ -1232,6 +1444,7 @@ const submitForm = async (e) => {
   renderSavedRecords();
 
   showAppModal(recordId);
+
   await generatePDF(record);
 
   setStatusLine("Submitted, saved, and PDF generated.", "success");
@@ -1246,6 +1459,7 @@ const resetFormFields = () => {
   form.reset();
   setToday($("crushDate"));
 
+  // enforce cement=1 in ratio mode
   if ($("ratioCement")) $("ratioCement").value = "1";
 
   if ($("admixtures-container")) $("admixtures-container").innerHTML = "";
@@ -1279,6 +1493,22 @@ const resetFormFields = () => {
   setStatusLine("", "info");
 };
 
+/* ---------- Cement fixed at 1 in ratio mode ---------- */
+
+const enforceRatioCementIsOne = () => {
+  const el = $("ratioCement");
+  if (!el) return;
+
+  el.value = "1";
+  el.setAttribute("readonly", "readonly");
+
+  const force = () => {
+    if (el.value !== "1") el.value = "1";
+  };
+
+  ["input", "change", "blur", "keyup"].forEach((evt) => el.addEventListener(evt, force));
+};
+
 /* ---------- Boot ---------- */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1288,8 +1518,10 @@ document.addEventListener("DOMContentLoaded", () => {
   setToday($("crushDate"));
   loadImageAsDataURL("unilag-logo.png").then((d) => (logoImageDataUrl = d));
 
+  enforceRatioCementIsOne();
   ensureDefaultAggregateRows();
 
+  // Add row buttons
   $("add-fine-kg-btn")?.addEventListener("click", () => {
     const c = $("fine-kg-container");
     if (!c) return;
@@ -1330,6 +1562,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("scms-container")?.appendChild(createScmRow());
   });
 
+  // Track initial mode
   lastInputMode = getInputMode();
 
   $("modeKg")?.addEventListener("change", handleInputModeChange);
@@ -1341,6 +1574,7 @@ document.addEventListener("DOMContentLoaded", () => {
   syncConcreteTypeOther();
   syncCementTypeOther();
 
+  // Derived values listeners
   ["cementContent", "waterContent"].forEach((id) =>
     $(id)?.addEventListener("input", () => {
       updateWCRatioFromKg();
@@ -1348,10 +1582,10 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   );
 
-  ["ratioCement", "ratioWater"].forEach((id) =>
-    $(id)?.addEventListener("input", updateWcAndMixFromRatio)
-  );
+  $("ratioWater")?.addEventListener("input", updateWcAndMixFromRatio);
+  // mix ratio responds to dynamic row changes via syncFineRatioTotal/syncCoarseRatioTotal
 
+  // Saved-records table click-to-load
   $("mixes-table-body")?.addEventListener("click", (e) => {
     const tr = e.target.closest("tr");
     if (!tr) return;
@@ -1359,13 +1593,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (idx == null) return;
     const list = getLocalRecords();
     const rec = list[Number(idx)];
-    if (rec) {
-      // Keep existing behavior: load into form if you have that loader elsewhere
-      // If you want it here too, tell me and I’ll add loadRecordIntoForm back in.
-      setStatusLine("Loading saved records into form is not wired in this version.", "info");
-    }
+    if (rec) loadRecordIntoForm(rec);
   });
 
+  // Main actions
   $("mix-form")?.addEventListener("submit", submitForm);
   $("reset-form-btn")?.addEventListener("click", resetFormFields);
   $("export-csv-btn")?.addEventListener("click", exportCsv);
