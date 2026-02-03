@@ -683,7 +683,6 @@ button {
   border: 1.5px solid rgba(172, 156, 127, 0.95);
   font-family: var(--font-type);
   letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 .btn-primary:hover,
@@ -952,5 +951,6 @@ tbody tr:hover {
   text-align: center;
 
 }
+
 
 
