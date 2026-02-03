@@ -499,7 +499,6 @@ input[type="radio"] {
   font-weight: 700;
   font-size: 0.9rem;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--ink-main);
   line-height: 1.1;
 }
@@ -953,4 +952,5 @@ tbody tr:hover {
   text-align: center;
 
 }
+
 
