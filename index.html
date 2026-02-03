@@ -5,14 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>UNILAG Research Mix Intake Form</title>
 
+  <!-- IMPORTANT: Use your original stylesheet exactly -->
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Force ONE font everywhere (without changing style.css) -->
-  <style>
-    :root{
-      --font-type: var(--font-sans);
-    }
-  </style>
 
   <!-- jsPDF for PDF generation -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
@@ -236,12 +230,14 @@
               </label>
             </div>
 
+            <!-- Fine aggregate -->
             <h4 class="section-title">Fine Aggregate</h4>
             <div id="fine-kg-container" class="dynamic-group"></div>
             <button type="button" id="add-fine-kg-btn" class="btn-primary small">
               + Add Fine Aggregate
             </button>
 
+            <!-- Coarse aggregate -->
             <h4 class="section-title">Coarse Aggregate</h4>
             <div id="coarse-kg-container" class="dynamic-group"></div>
             <button type="button" id="add-coarse-kg-btn" class="btn-primary small">
@@ -292,13 +288,13 @@
 
           <!-- W/C & MIX RATIO -->
           <div id="wcratio-box" class="wc-box" style="display:none;">
-              <strong>Water–Cement Ratio:</strong>
-              <span id="wcRatioValue">0.00</span>
+            <strong>Water–Cement Ratio:</strong>
+            <span id="wcRatioValue">0.00</span>
           </div>
 
           <div id="mixratio-box" class="wc-box" style="display:none;">
-              <strong>Normalized Mix Ratio (by cement):</strong>
-              <span id="mixRatioValue">–</span>
+            <strong>Normalized Mix Ratio (by cement):</strong>
+            <span id="mixRatioValue">–</span>
           </div>
 
           <!-- CHEMICAL ADMIXTURES -->
@@ -368,19 +364,11 @@
     </div>
 
     <!-- APPLICATION NUMBER MODAL -->
-    <div
-      id="appModal"
-      class="modal hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modalTitle"
-    >
+    <div id="appModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modal-card research">
         <div class="modal-header">
           <h4 id="modalTitle">Application Number</h4>
-          <button id="modalClose" type="button" class="modal-x" aria-label="Close dialog">
-            ×
-          </button>
+          <button id="modalClose" type="button" class="modal-x" aria-label="Close dialog">×</button>
         </div>
         <div class="modal-body">
           <div class="modal-number" id="modalNumber">UNILAG-CL-K000001</div>
