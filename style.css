@@ -651,7 +651,6 @@ button {
   color: #f7f1e3;
   font-family: var(--font-type);
   letter-spacing: 0.16em;
-  text-transform: uppercase;
   box-shadow: 0 6px 16px rgba(41, 72, 107, 0.7);
 }
 
@@ -954,3 +953,4 @@ tbody tr:hover {
   text-align: center;
 
 }
+
