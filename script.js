@@ -1122,7 +1122,7 @@ const renderPdfOnePage = (data, fontSize) => {
   if (!admixtures.length) {
     if (!addLine("None")) return null;
   } else {
-    for (const a of admixtures) if (!addLine(`• ${a.name || ""} | ${a.dosage || ""}`)) return null;
+    for (const a of admixtures) if (!addLine(`• ${a.name || ""} - ${a.dosage || ""}`)) return null;
   }
   if (!addGap(0.4)) return null;
 
@@ -1137,7 +1137,7 @@ const renderPdfOnePage = (data, fontSize) => {
   if (!scms.length) {
     if (!addLine("None")) return null;
   } else {
-    for (const s of scms) if (!addLine(`• ${s.name || ""} | ${s.percent || ""}%`)) return null;
+    for (const s of scms) if (!addLine(`• ${s.name || ""} - ${s.percent || ""}%`)) return null;
   }
   if (!addGap(0.4)) return null;
 
@@ -1522,3 +1522,4 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSavedRecords();
   initModal();
 });
+
