@@ -1,80 +1,186 @@
 import { google } from "googleapis";
 
-const SHEET_RATIO_CANDIDATES = ["Research Master Sheet - Ratio", "Client Master Sheet - Ratio"];
-const SHEET_KGM3_CANDIDATES = ["Research Master Sheet - Kg/m3", "Client Master Sheet - kg/m3", "Client Master Sheet - Kg/m3"];
+const SHEET_ID = process.env.SHEET_ID;
 
-const SHEET_FINE_CANDIDATES = ["Research Fine Aggregates", "Client Fine Aggregates"];
-const SHEET_COARSE_CANDIDATES = ["Research Coarse Aggregates", "Client Coarse Aggregates"];
-const SHEET_ADMIXTURES_CANDIDATES = ["Research Admixtures", "Client Admixtures"];
-const SHEET_SCMS_CANDIDATES = ["Research SCMs", "Client SCMs"];
+const SHEETS = {
+  MASTER_RATIO: "Research Master Sheet - Ratio",
+  MASTER_KG: "Research Master Sheet - Kg/m3",
+  FINE: "Research Fine Aggregates",
+  COARSE: "Research Coarse Aggregates",
+  ADMIX: "Research Admixtures",
+  SCMS: "Research SCMs",
+};
 
-function isMissing(v) {
-  return v === undefined || v === null || String(v).trim() === "";
+const PREFIX = {
+  ratio: "UNILAG-CLR",
+  kg: "UNILAG-CLK",
+};
+
+function safeStr(v) {
+  if (v === null || v === undefined) return "";
+  return String(v);
 }
 
-function normalizeMode(m) {
-  const s = String(m || "").trim().toLowerCase();
-  if (s === "ratio") return "ratio";
-  if (s === "kg" || s === "kgm3" || s === "kg/m3" || s === "kgm^3" || s === "kgm-3") return "kgm3";
+function safeNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : "";
+}
+
+function normalizeMode(inputMode) {
+  const m = safeStr(inputMode).trim().toLowerCase();
+  if (m === "ratio") return "ratio";
+  if (m === "kg" || m === "kgm3" || m === "kg/m3" || m === "kgm^3") return "kg";
   return "";
 }
 
-function nextRecordId(lastId, prefix) {
-  if (!lastId) return `${prefix}-000001`;
-  const match = String(lastId).trim().match(new RegExp(`^${prefix}-(\\d{6})$`));
-  if (!match) return `${prefix}-000001`;
-  const n = parseInt(match[1], 10) + 1;
-  return `${prefix}-${String(n).padStart(6, "0")}`;
+function pad5(n) {
+  return String(n).padStart(5, "0");
 }
 
-async function getAuth() {
-  const raw = process.env.GOOGLE_SERVICE_CREDENTIALS;
-  if (isMissing(process.env.SHEET_ID) || isMissing(raw)) {
-    throw new Error("Missing env vars");
+function toNumberAlpha(str) {
+  let num = 0;
+  for (const ch of str) {
+    const c = ch.charCodeAt(0) - 64;
+    num = num * 26 + c;
   }
-  let credentials;
-  try {
-    credentials = JSON.parse(raw);
-  } catch {
-    throw new Error("Invalid GOOGLE_SERVICE_CREDENTIALS");
+  return num;
+}
+
+function toLetters(num) {
+  let s = "";
+  while (num > 0) {
+    const rem = (num - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    num = Math.floor((num - 1) / 26);
   }
-  return new google.auth.GoogleAuth({
-    credentials,
+  return s;
+}
+
+function nextLetter(letter) {
+  const current = (letter || "A").toUpperCase();
+  return toLetters(toNumberAlpha(current) + 1);
+}
+
+function makeRecordId(mode, letter, number) {
+  const pref = mode === "ratio" ? PREFIX.ratio : PREFIX.kg;
+  return `${pref}-${letter}${pad5(number)}`;
+}
+
+function parseRecordId(mode, recordId) {
+  const pref = mode === "ratio" ? PREFIX.ratio : PREFIX.kg;
+  const s = safeStr(recordId).trim().toUpperCase();
+  const re = new RegExp(`^${pref.replace(/[-/\\^$*+?.()|[\\]{}]/g, "\\$&")}-([A-Z]+)(\\d{5})$`);
+  const m = s.match(re);
+  if (!m) return null;
+  return { letter: m[1], number: parseInt(m[2], 10) };
+}
+
+function incrementLetterNumber(letter, number) {
+  let l = (letter || "A").toUpperCase();
+  let n = Number(number) || 1;
+  n += 1;
+  if (n > 99999) {
+    n = 1;
+    l = nextLetter(l);
+  }
+  return { letter: l, number: n };
+}
+
+function isoNow() {
+  return new Date().toISOString();
+}
+
+async function readJsonBody(req) {
+  if (req.body && typeof req.body === "object") return req.body;
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString("utf8");
+  if (!raw) return {};
+  return JSON.parse(raw);
+}
+
+function buildAuth() {
+  const rawCreds = process.env.GOOGLE_SERVICE_CREDENTIALS;
+
+  if (rawCreds) {
+    let credentials;
+    try {
+      credentials = JSON.parse(rawCreds);
+    } catch {
+      throw new Error("Invalid GOOGLE_SERVICE_CREDENTIALS JSON");
+    }
+
+    return new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+  }
+
+  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+  if (!clientEmail || !privateKey) {
+    throw new Error("Missing Google credentials env vars");
+  }
+
+  privateKey = privateKey.replace(/\\n/g, "\n");
+
+  return new google.auth.JWT({
+    email: clientEmail,
+    key: privateKey,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 }
 
-async function listSheets(sheets, spreadsheetId) {
-  const meta = await sheets.spreadsheets.get({ spreadsheetId });
-  const tabs = (meta.data.sheets || []).map((s) => s.properties?.title).filter(Boolean);
-  return new Set(tabs);
+function sheetsClient(auth) {
+  return google.sheets({ version: "v4", auth });
 }
 
-function pickExistingSheet(candidates, sheetSet) {
-  for (const name of candidates) {
-    if (sheetSet.has(name)) return name;
-  }
-  return "";
-}
-
-async function getLastRecordId(sheets, spreadsheetId, sheetName, prefix) {
+async function getColumnAValues(sheets, sheetName) {
   const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
+    spreadsheetId: SHEET_ID,
     range: `${sheetName}!A:A`,
   });
-
-  const values = res.data.values || [];
-  for (let i = values.length - 1; i >= 1; i--) {
-    const v = values[i]?.[0];
-    if (!isMissing(v) && String(v).trim().startsWith(prefix)) return String(v).trim();
-  }
-  return "";
+  return res.data.values || [];
 }
 
-async function appendRows(sheets, spreadsheetId, sheetName, rows) {
+async function getNextRecordIdFromMaster(sheets, mode) {
+  const masterName = mode === "ratio" ? SHEETS.MASTER_RATIO : SHEETS.MASTER_KG;
+
+  const col = await getColumnAValues(sheets, masterName);
+  let last = "";
+
+  for (let i = col.length - 1; i >= 1; i--) {
+    const v = safeStr(col[i]?.[0]).trim();
+    if (v) {
+      last = v;
+      break;
+    }
+  }
+
+  if (!last) return makeRecordId(mode, "A", 1);
+
+  const parsed = parseRecordId(mode, last);
+  if (!parsed) {
+    for (let i = col.length - 1; i >= 1; i--) {
+      const v = safeStr(col[i]?.[0]).trim();
+      const p = parseRecordId(mode, v);
+      if (p) {
+        const next = incrementLetterNumber(p.letter, p.number);
+        return makeRecordId(mode, next.letter, next.number);
+      }
+    }
+    return makeRecordId(mode, "A", 1);
+  }
+
+  const next = incrementLetterNumber(parsed.letter, parsed.number);
+  return makeRecordId(mode, next.letter, next.number);
+}
+
+async function appendRows(sheets, sheetName, rows) {
   if (!rows.length) return;
   await sheets.spreadsheets.values.append({
-    spreadsheetId,
+    spreadsheetId: SHEET_ID,
     range: `${sheetName}!A:A`,
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
@@ -85,112 +191,123 @@ async function appendRows(sheets, spreadsheetId, sheetName, rows) {
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
-      return res.status(405).json({ success: false, message: "Method not allowed" });
+      res.status(405).json({ ok: false, message: "Method not allowed" });
+      return;
     }
 
-    const body = req.body && typeof req.body === "object" ? req.body : {};
-    const mode = normalizeMode(body.inputMode);
+    if (!SHEET_ID) {
+      res.status(500).json({ ok: false, message: "Missing SHEET_ID" });
+      return;
+    }
+
+    const payload = await readJsonBody(req);
+    const mode = normalizeMode(payload.inputMode);
 
     if (!mode) {
-      return res.status(400).json({ success: false, message: "Invalid inputMode" });
+      res.status(400).json({ ok: false, message: "Invalid inputMode" });
+      return;
     }
 
-    const spreadsheetId = process.env.SHEET_ID;
+    const auth = buildAuth();
+    const sheets = sheetsClient(auth);
 
-    const auth = await getAuth();
-    const sheets = google.sheets({ version: "v4", auth });
+    const recordId = await getNextRecordIdFromMaster(sheets, mode);
+    const timestamp = isoNow();
 
-    const sheetSet = await listSheets(sheets, spreadsheetId);
+    const masterSheet = mode === "ratio" ? SHEETS.MASTER_RATIO : SHEETS.MASTER_KG;
 
-    const masterSheet =
-      mode === "kgm3"
-        ? pickExistingSheet(SHEET_KGM3_CANDIDATES, sheetSet)
-        : pickExistingSheet(SHEET_RATIO_CANDIDATES, sheetSet);
-
-    if (!masterSheet) {
-      return res.status(500).json({ success: false, message: "Master sheet tab not found" });
-    }
-
-    const fineSheet = pickExistingSheet(SHEET_FINE_CANDIDATES, sheetSet);
-    const coarseSheet = pickExistingSheet(SHEET_COARSE_CANDIDATES, sheetSet);
-    const admixtureSheet = pickExistingSheet(SHEET_ADMIXTURES_CANDIDATES, sheetSet);
-    const scmsSheet = pickExistingSheet(SHEET_SCMS_CANDIDATES, sheetSet);
-
-    const prefix = mode === "kgm3" ? "UNILAG-CLK" : "UNILAG-CLR";
-    const lastId = await getLastRecordId(sheets, spreadsheetId, masterSheet, prefix);
-    const recordId = nextRecordId(lastId, prefix);
-    const timestamp = new Date().toISOString();
-
-    const wcRatio = body.wcRatio ?? "";
-    const mixRatioString = body.mixRatioString ?? "";
+    const wcValue = mode === "ratio" ? safeNum(payload.ratioWater) : safeNum(payload.wcRatio);
 
     const masterRow = [
       recordId,
       timestamp,
-      body.inputMode ?? "",
-      body.studentName ?? "",
-      body.matricNumber ?? "",
-      body.studentPhone ?? "",
-      body.programme ?? "",
-      body.supervisorName ?? "",
-      body.thesisTitle ?? "",
-      body.crushDate ?? "",
-      body.concreteType ?? "",
-      body.cementType ?? "",
-      body.slump ?? "",
-      body.ageDays ?? "",
-      body.cubesCount ?? "",
-      body.targetStrength ?? "",
-      body.cementContent ?? "",
-      body.waterContent ?? "",
-      body.fineAgg ?? "",
-      body.coarseAgg ?? "",
-      body.ratioCement ?? "",
-      body.ratioFine ?? "",
-      body.ratioCoarse ?? "",
-      body.ratioWater ?? "",
-      wcRatio,
-      mixRatioString,
-      body.notes ?? "",
+      safeStr(payload.studentName),
+      safeStr(payload.matricNumber),
+      safeStr(payload.studentPhone),
+      safeStr(payload.programme),
+      safeStr(payload.supervisorName),
+      safeStr(payload.thesisTitle),
+      safeStr(payload.crushDate),
+      safeStr(payload.concreteType),
+      safeStr(payload.cementType),
+      safeNum(payload.slump),
+      safeNum(payload.ageDays),
+      safeNum(payload.cubesCount),
+      safeNum(payload.targetStrength),
+      safeNum(payload.cementContent),
+      safeNum(payload.waterContent),
+      wcValue,
+      safeStr(payload.mixRatioString),
+      safeStr(payload.notes),
     ];
 
-    await appendRows(sheets, spreadsheetId, masterSheet, [masterRow]);
+    await appendRows(sheets, masterSheet, [masterRow]);
 
-    const fineAggregates = Array.isArray(body.fineAggregates) ? body.fineAggregates : [];
-    const coarseAggregates = Array.isArray(body.coarseAggregates) ? body.coarseAggregates : [];
-    const admixtures = Array.isArray(body.admixtures) ? body.admixtures : [];
-    const scms = Array.isArray(body.scms) ? body.scms : [];
+    const commonA = recordId;
+    const commonB = timestamp;
+    const commonC = safeStr(payload.studentName);
+    const commonD = safeStr(payload.matricNumber);
 
-    if (fineSheet) {
-      const rows = fineAggregates
-        .filter((a) => !isMissing(a?.name) || !isMissing(a?.qty))
-        .map((a) => [recordId, body.inputMode ?? "", a?.rowNo ?? "", a?.name ?? "", a?.qty ?? "", a?.unit ?? ""]);
-      await appendRows(sheets, spreadsheetId, fineSheet, rows);
-    }
+    const fineAggregates = Array.isArray(payload.fineAggregates) ? payload.fineAggregates : [];
+    const fineRows = fineAggregates
+      .filter((a) => safeStr(a?.name).trim() || safeStr(a?.qty).trim() || safeStr(a?.unit).trim())
+      .map((a) => [
+        commonA,
+        commonB,
+        commonC,
+        commonD,
+        safeStr(a?.rowNo),
+        safeStr(a?.name),
+        safeStr(a?.qty),
+        safeStr(a?.unit),
+      ]);
+    await appendRows(sheets, SHEETS.FINE, fineRows);
 
-    if (coarseSheet) {
-      const rows = coarseAggregates
-        .filter((a) => !isMissing(a?.name) || !isMissing(a?.qty))
-        .map((a) => [recordId, body.inputMode ?? "", a?.rowNo ?? "", a?.name ?? "", a?.qty ?? "", a?.unit ?? ""]);
-      await appendRows(sheets, spreadsheetId, coarseSheet, rows);
-    }
+    const coarseAggregates = Array.isArray(payload.coarseAggregates) ? payload.coarseAggregates : [];
+    const coarseRows = coarseAggregates
+      .filter((a) => safeStr(a?.name).trim() || safeStr(a?.qty).trim() || safeStr(a?.unit).trim())
+      .map((a) => [
+        commonA,
+        commonB,
+        commonC,
+        commonD,
+        safeStr(a?.rowNo),
+        safeStr(a?.name),
+        safeStr(a?.qty),
+        safeStr(a?.unit),
+      ]);
+    await appendRows(sheets, SHEETS.COARSE, coarseRows);
 
-    if (admixtureSheet) {
-      const rows = admixtures
-        .filter((a) => !isMissing(a?.name) || !isMissing(a?.dosage))
-        .map((a, idx) => [recordId, body.inputMode ?? "", idx + 1, a?.name ?? "", a?.dosage ?? ""]);
-      await appendRows(sheets, spreadsheetId, admixtureSheet, rows);
-    }
+    const admixtures = Array.isArray(payload.admixtures) ? payload.admixtures : [];
+    const admixtureRows = admixtures
+      .filter((a) => safeStr(a?.name).trim() || safeStr(a?.dosage).trim())
+      .map((a, idx) => [
+        commonA,
+        commonB,
+        commonC,
+        commonD,
+        idx + 1,
+        safeStr(a?.name),
+        safeStr(a?.dosage),
+      ]);
+    await appendRows(sheets, SHEETS.ADMIX, admixtureRows);
 
-    if (scmsSheet) {
-      const rows = scms
-        .filter((s) => !isMissing(s?.name) || !isMissing(s?.percent))
-        .map((s, idx) => [recordId, body.inputMode ?? "", idx + 1, s?.name ?? "", s?.percent ?? ""]);
-      await appendRows(sheets, spreadsheetId, scmsSheet, rows);
-    }
+    const scms = Array.isArray(payload.scms) ? payload.scms : [];
+    const scmRows = scms
+      .filter((s) => safeStr(s?.name).trim() || safeStr(s?.percent).trim())
+      .map((s, idx) => [
+        commonA,
+        commonB,
+        commonC,
+        commonD,
+        idx + 1,
+        safeStr(s?.name),
+        safeStr(s?.percent),
+      ]);
+    await appendRows(sheets, SHEETS.SCMS, scmRows);
 
-    return res.status(200).json({ success: true, recordId, timestamp });
-  } catch (e) {
-    return res.status(500).json({ success: false, message: e?.message || "Server error" });
+    res.status(200).json({ ok: true, recordId, timestamp });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err?.message || "Server error" });
   }
 }
