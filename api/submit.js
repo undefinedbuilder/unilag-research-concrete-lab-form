@@ -3,12 +3,12 @@ import { google } from "googleapis";
 const SHEET_ID = process.env.SHEET_ID;
 
 const SHEETS = {
-  MASTER_RATIO: "Research Master Sheet - Ratio",
-  MASTER_KG: "Research Master Sheet - Kg/m3",
-  FINE: "Research Fine Aggregates",
-  COARSE: "Research Coarse Aggregates",
-  ADMIX: "Research Admixtures",
-  SCMS: "Research SCMs",
+  MASTER_RATIO: ["Research Master Sheet - Ratio", "Research Master Sheet - ratio", "Master Sheet - Ratio"],
+  MASTER_KG: ["Research Master Sheet - Kg/m3", "Research Master Sheet - kg/m3", "Master Sheet - Kg/m3", "Master Sheet - kg/m3"],
+  FINE: ["Research Fine Aggregates", "Research Fine Aggregate", "Fine Aggregates", "Research Fine aggregates"],
+  COARSE: ["Research Coarse Aggregates", "Research Coarse Aggregate", "Coarse Aggregates", "Research Coarse aggregates"],
+  ADMIX: ["Research Admixtures", "Admixtures", "Research Admixture"],
+  SCMS: ["Research SCMs", "SCMs", "Research SCM", "Research Scms"],
 };
 
 const PREFIX = {
@@ -136,23 +136,46 @@ function sheetsClient(auth) {
   return google.sheets({ version: "v4", auth });
 }
 
-function a1(sheetName, range) {
-  const name = safeStr(sheetName).replace(/'/g, "''");
-  return `'${name}'!${range}`;
+function normName(s) {
+  return safeStr(s).toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function quoteSheetName(name) {
+  const n = safeStr(name);
+  return `'${n.replace(/'/g, "''")}'`;
+}
+
+async function getSheetTitleMap(sheets) {
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const titles = (meta.data.sheets || [])
+    .map((s) => s.properties?.title)
+    .filter(Boolean);
+
+  const map = new Map();
+  for (const t of titles) {
+    map.set(normName(t), t);
+  }
+  return map;
+}
+
+function pickSheetTitle(candidates, titleMap) {
+  for (const c of candidates) {
+    const hit = titleMap.get(normName(c));
+    if (hit) return hit;
+  }
+  return "";
 }
 
 async function getColumnAValues(sheets, sheetName) {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: a1(sheetName, "A:A"),
+    range: `${quoteSheetName(sheetName)}!A:A`,
   });
   return res.data.values || [];
 }
 
-async function getNextRecordIdFromMaster(sheets, mode) {
-  const masterName = mode === "ratio" ? SHEETS.MASTER_RATIO : SHEETS.MASTER_KG;
-
-  const col = await getColumnAValues(sheets, masterName);
+async function getNextRecordIdFromMaster(sheets, masterSheetName, mode) {
+  const col = await getColumnAValues(sheets, masterSheetName);
   let last = "";
 
   for (let i = col.length - 1; i >= 1; i--) {
@@ -186,7 +209,7 @@ async function appendRows(sheets, sheetName, rows) {
   if (!rows.length) return;
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: a1(sheetName, "A:A"),
+    range: `${quoteSheetName(sheetName)}!A:A`,
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: rows },
@@ -216,10 +239,25 @@ export default async function handler(req, res) {
     const auth = buildAuth();
     const sheets = sheetsClient(auth);
 
-    const recordId = await getNextRecordIdFromMaster(sheets, mode);
-    const timestamp = isoNow();
+    const titleMap = await getSheetTitleMap(sheets);
 
-    const masterSheet = mode === "ratio" ? SHEETS.MASTER_RATIO : SHEETS.MASTER_KG;
+    const masterSheet =
+      mode === "ratio"
+        ? pickSheetTitle(SHEETS.MASTER_RATIO, titleMap)
+        : pickSheetTitle(SHEETS.MASTER_KG, titleMap);
+
+    if (!masterSheet) {
+      res.status(500).json({ ok: false, message: "Master sheet tab not found" });
+      return;
+    }
+
+    const fineSheet = pickSheetTitle(SHEETS.FINE, titleMap);
+    const coarseSheet = pickSheetTitle(SHEETS.COARSE, titleMap);
+    const admixtureSheet = pickSheetTitle(SHEETS.ADMIX, titleMap);
+    const scmsSheet = pickSheetTitle(SHEETS.SCMS, titleMap);
+
+    const recordId = await getNextRecordIdFromMaster(sheets, masterSheet, mode);
+    const timestamp = isoNow();
 
     const wcValue = mode === "ratio" ? safeNum(payload.ratioWater) : safeNum(payload.wcRatio);
 
@@ -254,62 +292,70 @@ export default async function handler(req, res) {
     const commonD = safeStr(payload.matricNumber);
 
     const fineAggregates = Array.isArray(payload.fineAggregates) ? payload.fineAggregates : [];
-    const fineRows = fineAggregates
-      .filter((a) => safeStr(a?.name).trim() || safeStr(a?.qty).trim() || safeStr(a?.unit).trim())
-      .map((a) => [
-        commonA,
-        commonB,
-        commonC,
-        commonD,
-        safeStr(a?.rowNo),
-        safeStr(a?.name),
-        safeStr(a?.qty),
-        safeStr(a?.unit),
-      ]);
-    await appendRows(sheets, SHEETS.FINE, fineRows);
+    if (fineSheet) {
+      const rows = fineAggregates
+        .filter((a) => safeStr(a?.name).trim() || safeStr(a?.qty).trim() || safeStr(a?.unit).trim())
+        .map((a) => [
+          commonA,
+          commonB,
+          commonC,
+          commonD,
+          safeStr(a?.rowNo),
+          safeStr(a?.name),
+          safeStr(a?.qty),
+          safeStr(a?.unit),
+        ]);
+      await appendRows(sheets, fineSheet, rows);
+    }
 
     const coarseAggregates = Array.isArray(payload.coarseAggregates) ? payload.coarseAggregates : [];
-    const coarseRows = coarseAggregates
-      .filter((a) => safeStr(a?.name).trim() || safeStr(a?.qty).trim() || safeStr(a?.unit).trim())
-      .map((a) => [
-        commonA,
-        commonB,
-        commonC,
-        commonD,
-        safeStr(a?.rowNo),
-        safeStr(a?.name),
-        safeStr(a?.qty),
-        safeStr(a?.unit),
-      ]);
-    await appendRows(sheets, SHEETS.COARSE, coarseRows);
+    if (coarseSheet) {
+      const rows = coarseAggregates
+        .filter((a) => safeStr(a?.name).trim() || safeStr(a?.qty).trim() || safeStr(a?.unit).trim())
+        .map((a) => [
+          commonA,
+          commonB,
+          commonC,
+          commonD,
+          safeStr(a?.rowNo),
+          safeStr(a?.name),
+          safeStr(a?.qty),
+          safeStr(a?.unit),
+        ]);
+      await appendRows(sheets, coarseSheet, rows);
+    }
 
     const admixtures = Array.isArray(payload.admixtures) ? payload.admixtures : [];
-    const admixtureRows = admixtures
-      .filter((a) => safeStr(a?.name).trim() || safeStr(a?.dosage).trim())
-      .map((a, idx) => [
-        commonA,
-        commonB,
-        commonC,
-        commonD,
-        idx + 1,
-        safeStr(a?.name),
-        safeStr(a?.dosage),
-      ]);
-    await appendRows(sheets, SHEETS.ADMIX, admixtureRows);
+    if (admixtureSheet) {
+      const rows = admixtures
+        .filter((a) => safeStr(a?.name).trim() || safeStr(a?.dosage).trim())
+        .map((a, idx) => [
+          commonA,
+          commonB,
+          commonC,
+          commonD,
+          idx + 1,
+          safeStr(a?.name),
+          safeStr(a?.dosage),
+        ]);
+      await appendRows(sheets, admixtureSheet, rows);
+    }
 
     const scms = Array.isArray(payload.scms) ? payload.scms : [];
-    const scmRows = scms
-      .filter((s) => safeStr(s?.name).trim() || safeStr(s?.percent).trim())
-      .map((s, idx) => [
-        commonA,
-        commonB,
-        commonC,
-        commonD,
-        idx + 1,
-        safeStr(s?.name),
-        safeStr(s?.percent),
-      ]);
-    await appendRows(sheets, SHEETS.SCMS, scmRows);
+    if (scmsSheet) {
+      const rows = scms
+        .filter((s) => safeStr(s?.name).trim() || safeStr(s?.percent).trim())
+        .map((s, idx) => [
+          commonA,
+          commonB,
+          commonC,
+          commonD,
+          idx + 1,
+          safeStr(s?.name),
+          safeStr(s?.percent),
+        ]);
+      await appendRows(sheets, scmsSheet, rows);
+    }
 
     res.status(200).json({ ok: true, recordId, timestamp });
   } catch (err) {
