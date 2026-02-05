@@ -136,10 +136,15 @@ function sheetsClient(auth) {
   return google.sheets({ version: "v4", auth });
 }
 
+function a1(sheetName, range) {
+  const name = safeStr(sheetName).replace(/'/g, "''");
+  return `'${name}'!${range}`;
+}
+
 async function getColumnAValues(sheets, sheetName) {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: `${sheetName}!A:A`,
+    range: a1(sheetName, "A:A"),
   });
   return res.data.values || [];
 }
@@ -181,7 +186,7 @@ async function appendRows(sheets, sheetName, rows) {
   if (!rows.length) return;
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: `${sheetName}!A:A`,
+    range: a1(sheetName, "A:A"),
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: rows },
