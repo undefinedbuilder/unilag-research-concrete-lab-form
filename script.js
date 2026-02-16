@@ -1401,30 +1401,33 @@ const showAppModal = (number) => {
 
 /* ---------- Submit ---------- */
 
-const submitForm = async (e) => {
+$("mix-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+
   if (!validateForm()) return;
 
-  setStatusLine("Submitting...", "info");
-  const data = collectFormData();
-
-  if (!logoImageDataUrl) logoImageDataUrl = await loadImageAsDataURL("unilag-logo.png");
-
-  let apiResult = null;
-  let resOk = false;
+  const payload = collectFormData();
 
   try {
-    const res = await fetch(SUBMIT_URL, {
+    const res = await fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
-    resOk = res.ok;
-    apiResult = await res.json().catch(() => null);
-  } catch {
-    apiResult = null;
-    resOk = false;
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      alert("Submission failed");
+      return;
+    }
+
+    alert(`Submitted successfully. Ref: ${data.recordId}`);
+  } catch (err) {
+    console.error(err);
+    alert("Network / server error");
   }
+});
 
   // BACKEND IS SOURCE OF TRUTH FOR recordId (sequential)
   if (!resOk || !apiResult?.recordId) {
@@ -1605,3 +1608,4 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSavedRecords();
   initModal();
 });
+
