@@ -1401,33 +1401,32 @@ const showAppModal = (number) => {
 
 /* ---------- Submit ---------- */
 
-$("mix-form").addEventListener("submit", async (e) => {
+const submitForm = async (e) => {
   e.preventDefault();
 
   if (!validateForm()) return;
 
-  const payload = collectFormData();
+  const data = collectFormData();
+
+  setStatusLine("Submitting…", "info");
+
+  let resOk = false;
+  let apiResult = null;
 
   try {
-    const res = await fetch("/api/submit", {
+    const res = await fetch(SUBMIT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     });
 
-    const data = await res.json();
-
-    if (!data.ok) {
-      alert("Submission failed");
-      return;
-    }
-
-    alert(`Submitted successfully. Ref: ${data.recordId}`);
+    resOk = res.ok;
+    apiResult = await res.json().catch(() => null);
   } catch (err) {
     console.error(err);
-    alert("Network / server error");
+    setStatusLine("Network / server error.", "error");
+    return;
   }
-});
 
   // BACKEND IS SOURCE OF TRUTH FOR recordId (sequential)
   if (!resOk || !apiResult?.recordId) {
@@ -1452,7 +1451,6 @@ $("mix-form").addEventListener("submit", async (e) => {
 
   setStatusLine("Submitted, saved, and PDF generated.", "success");
 };
-
 /* ---------- Reset form ---------- */
 
 const resetFormFields = () => {
@@ -1608,4 +1606,3 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSavedRecords();
   initModal();
 });
-
