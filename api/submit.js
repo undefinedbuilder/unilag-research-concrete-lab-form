@@ -5,8 +5,8 @@ const SHEET_ID = process.env.SHEET_ID;
 const SHEETS = {
   MASTER_RATIO: ["Research Master Sheet - Ratio"],
   MASTER_KG: ["Research Master Sheet - Kg/m3"],
-  FINE: ["Research Fine Aggregates"],
-  COARSE: ["Research Coarse Aggregates"],
+  FINE: ["Research Fine Aggregates", "Research Fine Aggregate", "Fine Aggregates", "Fine Aggregate"],
+  COARSE: ["Research Coarse Aggregates", "Research Coarse Aggregate", "Coarse Aggregates", "Coarse Aggregate"],
   ADMIX: ["Research Admixtures"],
   SCMS: ["Research SCMs"],
 };
