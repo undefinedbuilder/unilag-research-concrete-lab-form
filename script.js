@@ -95,7 +95,7 @@ const createScmRow = (data = {}) => {
     </label>
     <label>
       <span class="label-line">
-        Percent (%) <span class="required-asterisk">*</span>
+        Percent Of Cememnt Replaced(%) <span class="required-asterisk">*</span>
       </span>
       <input type="text" name="scm_percent" value="${data.percent || ""}">
     </label>
@@ -1608,4 +1608,5 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSavedRecords();
   initModal();
 });
+
 
