@@ -773,9 +773,11 @@ const collectFormData = () => {
     mixRatioString = updateMixRatioFromKg();
   } else {
     const r = updateWcAndMixFromRatio();
-    wcRatio = r.wcRatio;
+    wcRatio = Number.isFinite(ratioWater) ? ratioWater : r.wcRatio;
     mixRatioString = r.mixRatioString;
   }
+
+  const cementContentOut = mode === "ratio" ? 1 : cementContent;
 
   const { fineAggregates, coarseAggregates } = collectAggregatesForPosting(mode);
 
@@ -798,7 +800,7 @@ const collectFormData = () => {
     targetStrength: toNum($("targetStrength")?.value) || 0,
     notes: $("notes")?.value.trim() || "",
 
-    cementContent: Number.isFinite(cementContent) ? cementContent : 0,
+    cementContent: Number.isFinite(cementContentOut) ? cementContentOut : 0,
     waterContent: Number.isFinite(waterContent) ? waterContent : 0,
     fineAgg: Number.isFinite(fineAgg) ? fineAgg : 0,
     coarseAgg: Number.isFinite(coarseAgg) ? coarseAgg : 0,
