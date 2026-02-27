@@ -67,13 +67,13 @@ const createAdmixtureRow = (data = {}) => {
   row.innerHTML = `
     <label>
       <span class="label-line">
-        Admixture Name <span class="required-asterisk">*</span>
+        Admixture / Superplasticizer Name <span class="required-asterisk">*</span>
       </span>
       <input type="text" name="adm_name" value="${data.name || ""}">
     </label>
     <label>
       <span class="label-line">
-        Dosage (L/100kg of Cement) <span class="required-asterisk">*</span>
+        Dosage (% of Cement) <span class="required-asterisk">*</span>
       </span>
       <input type="text" name="adm_dosage" value="${data.dosage || ""}">
     </label>
@@ -1608,3 +1608,4 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSavedRecords();
   initModal();
 });
+
