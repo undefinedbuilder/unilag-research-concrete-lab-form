@@ -182,28 +182,53 @@ export default async function handler(req, res) {
 
     const wcVal = mode === "ratio" ? safeNum(body.ratioWater) : safeNum(body.wcRatio);
 
-    await appendRows(sheets, master, [[
-      recordId,
-      ts,
-      safeStr(body.studentName),
-      safeStr(body.matricNumber),
-      safeStr(body.studentPhone),
-      safeStr(body.programme),
-      safeStr(body.supervisorName),
-      safeStr(body.thesisTitle),
-      safeStr(body.crushDate),
-      safeStr(body.concreteType),
-      safeStr(body.cementType),
-      safeNum(body.slump),
-      safeNum(body.ageDays),
-      safeNum(body.cubesCount),
-      safeNum(body.targetStrength),
-      safeNum(body.cementContent),
-      safeNum(body.waterContent),
-      wcVal,
-      safeStr(body.mixRatioString),
-      safeStr(body.notes),
-    ]]);
+    if (mode == "ratio") {
+      await appendRows(sheets, master, [[
+        recordId,
+        ts,
+        safeStr(body.studentName),
+        safeStr(body.matricNumber),
+        safeStr(body.studentPhone),
+        safeStr(body.programme),
+        safeStr(body.supervisorName),
+        safeStr(body.thesisTitle),
+        safeStr(body.crushDate),
+        safeStr(body.concreteType),
+        safeStr(body.cementType),
+        safeNum(body.slump),
+        safeNum(body.ageDays),
+        safeNum(body.cubesCount),
+        safeNum(body.targetStrength),
+        safeNum(body.cementContent),
+        wcVal,
+        safeStr(body.mixRatioString),
+        safeStr(body.notes),
+      ]]);
+      
+    } else {
+      await appendRows(sheets, master, [[
+        recordId,
+        ts,
+        safeStr(body.studentName),
+        safeStr(body.matricNumber),
+        safeStr(body.studentPhone),
+        safeStr(body.programme),
+        safeStr(body.supervisorName),
+        safeStr(body.thesisTitle),
+        safeStr(body.crushDate),
+        safeStr(body.concreteType),
+        safeStr(body.cementType),
+        safeNum(body.slump),
+        safeNum(body.ageDays),
+        safeNum(body.cubesCount),
+        safeNum(body.targetStrength),
+        safeNum(body.cementContent),
+        safeNum(body.waterContent),
+        wcVal,
+        safeStr(body.mixRatioString),
+        safeStr(body.notes),
+      ]]);
+    }
 
     const common = [recordId, ts, safeStr(body.studentName), safeStr(body.matricNumber)];
 
@@ -242,4 +267,3 @@ export default async function handler(req, res) {
     res.status(500).json({ ok: false, message: e.message });
   }
 }
-
