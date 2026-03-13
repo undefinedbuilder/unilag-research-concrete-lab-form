@@ -1,6 +1,5 @@
 /* ==========================================
-   Vintage Archives – Manila Folder Theme
-   Drop-in replacement for style.css
+   Vintage Archives Style
    ========================================== */
 
 /* Fonts: typewriter + clean sans */
@@ -858,7 +857,7 @@ tbody tr:hover {
   overflow: hidden;
 }
 
-/* FILE NO. stamp – now on the LEFT */
+/* FILE NO. stamp */
 .modal-card::before {
   content: "FILE NO.";
   position: absolute;
@@ -941,7 +940,7 @@ tbody tr:hover {
 }
 
 /* --------------------------
-   Footer (if used)
+   Footer
    -------------------------- */
 
 .footer {
@@ -951,6 +950,7 @@ tbody tr:hover {
   text-align: center;
 
 }
+
 
 
 
